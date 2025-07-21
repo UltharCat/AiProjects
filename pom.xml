@@ -10,6 +10,7 @@
 
     <modules>
         <module>RAG-Base</module>
+        <module>RAG-Ai</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -18,7 +19,7 @@
         <java.version>17</java.version>
         <spring-boot.version>3.5.3</spring-boot.version>
         <lombok.version>1.18.30</lombok.version>
-        <spring-ai.version>1.1.0</spring-ai.version>
+        <spring-ai.version>1.0.0-M6</spring-ai.version>
     </properties>
 
     <dependencyManagement>
@@ -37,7 +38,7 @@
             </dependency>
 
             <dependency>
-                <groupId>group.springframework.ai</groupId>
+                <groupId>org.springframework.ai</groupId>
                 <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
                 <version>${spring-ai.version}</version>
             </dependency>
