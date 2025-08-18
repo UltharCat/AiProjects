@@ -1,7 +1,5 @@
 package com.ragai.controller;
 
-import com.ragai.entity.ActorFilms;
-import com.ragai.entity.City;
 import com.ragai.entity.Country;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.client.ChatClient;
@@ -15,13 +13,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 @RestController
-@RequestMapping("/ollamaAi")
-public class OllamaAiController {
+@RequestMapping("/openAi")
+public class OpenAiController {
 
     private final ChatClient chatClient;
 
-    public OllamaAiController(@Qualifier("ollamaChatClient") ChatClient ollamaChatClient) {
-        this.chatClient = ollamaChatClient;
+    public OpenAiController(@Qualifier("openAiChatClient") ChatClient openAiChatClient) {
+        this.chatClient = openAiChatClient;
     }
 
     /**
@@ -82,6 +80,5 @@ public class OllamaAiController {
                 .call()
                 .entity(Country.class);
     }
-
 
 }
