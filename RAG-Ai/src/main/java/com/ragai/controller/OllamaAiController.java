@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
 @RestController
 @RequestMapping("/ollamaAi")
 public class OllamaAiController {
@@ -40,7 +43,7 @@ public class OllamaAiController {
      * @return
      */
     @GetMapping("/stream/sse")
-    public SseEmitter charStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public SseEmitter chatStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         SseEmitter emitter = new SseEmitter();
         chatClient.prompt().user(prompt).stream().content().subscribe(
@@ -64,7 +67,7 @@ public class OllamaAiController {
      * @return
      */
     @GetMapping(value = "/stream/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> charStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public Flux<String> chatStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         return chatClient.prompt()
                 .user(prompt)
@@ -75,12 +78,29 @@ public class OllamaAiController {
      * 同步响应实体返回对话
      */
     @GetMapping(value = "/chat/entity")
-    public Country chatEntity(@RequestParam("prompt") String prompt) {
+    public City chatEntity(@RequestParam("prompt") String prompt) {
         return chatClient
                 .prompt()
                 .user(prompt)
                 .call()
-                .entity(Country.class);
+                .entity(City.class);
+    }
+
+    /**
+     * Flux流式响应实体返回对话
+     * @param prompt
+     * @param response
+     * @return
+     */
+    @GetMapping(value = "/stream/flux/entity", produces = MediaType.APPLICATION_NDJSON_VALUE)
+    public Flux<City> chatStreamFluxEntity(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+        return chatClient
+                .prompt()
+                .user(prompt)
+                .stream()
+                .content()
+                // 将每个 token 映射为一个 City 快照：name 固定占位，road_name 为单元素列表
+                .map(token -> new City("token", List.of(token)));
     }
 
 
