@@ -32,8 +32,13 @@ public class OllamaAiController {
      * @return
      */
     @GetMapping("/chat")
-    public String chat(@RequestParam("prompt") String prompt) {
-        return chatClient.prompt().user(prompt).call().content();
+    public String chat(@RequestParam("prompt") String prompt, @RequestParam("lang") String lang) {
+        return chatClient
+                .prompt()
+                .system(sp->sp.param("lang", lang))
+                .user(prompt)
+                .call()
+                .content();
     }
 
     /**

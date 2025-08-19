@@ -26,7 +26,7 @@ public class AiClientConfig {
     public ChatClient ollamaChatClient(@Qualifier("ollamaChatModel") ChatModel model) {
         return ChatClient
                 .builder(model)
-                .defaultSystem("你是一个中国人，使用中文回答问题")
+                .defaultSystem("你是一个中国人，使用{lang}回答问题")
                 .build();
     }
 
