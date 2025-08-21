@@ -22,13 +22,13 @@ public class AiClientConfig {
     }
 
     // 绑定到 Alibaba：依赖 dashscopeChatModel（openAiChatModel这个类由 com.alibaba.cloud.ai 的com/alibaba/cloud/ai/autoconfigure/dashscope/DashScopeAutoConfiguration自动装配）
-    @Bean("dashScopeChatClient")
-    public ChatClient dashScopeChatClient(@Qualifier("dashscopeChatModel") ChatModel model) {
-        return ChatClient
-                .builder(model)
-                .defaultSystem("你是一个日本人，使用日语回答问题")
-                .build();
-    }
+//    @Bean("dashScopeChatClient")
+//    public ChatClient dashScopeChatClient(@Qualifier("dashscopeChatModel") ChatModel model) {
+//        return ChatClient
+//                .builder(model)
+//                .defaultSystem("你是一个日本人，使用日语回答问题")
+//                .build();
+//    }
 
     // 绑定到 Ollama：依赖 ollamaChatModel（ollamaChatModel这个类由 spring-ai-ollama-spring-boot-starter 的org/springframework/ai/autoconfigure/ollama/OllamaAutoConfiguration自动装配）
     @Bean("ollamaChatClient")

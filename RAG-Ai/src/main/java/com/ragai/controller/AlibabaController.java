@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
-@RestController
+//@RestController
 @RequestMapping("/alibaba")
 public class AlibabaController {
 
