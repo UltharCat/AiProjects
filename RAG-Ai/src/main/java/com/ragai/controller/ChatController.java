@@ -13,13 +13,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Flux;
 
 @RestController
-@RequestMapping("/openAi")
-public class OpenAiController {
+@RequestMapping("/chat")
+public class ChatController {
 
     private final ChatClient chatClient;
 
-    public OpenAiController(@Qualifier("openAiChatClient") ChatClient openAiChatClient) {
-        this.chatClient = openAiChatClient;
+    public ChatController(@Qualifier("chatClient") ChatClient chatClient) {
+        this.chatClient = chatClient;
     }
 
     /**
@@ -27,13 +27,25 @@ public class OpenAiController {
      * @param prompt
      * @return
      */
-    @GetMapping("/chat")
+    @GetMapping("/singleChat")
     public String chat(@RequestParam("prompt") String prompt) {
         return chatClient.prompt().user(prompt).call().content();
     }
 
     /**
-     * MVC流式响应对话
+     * 同步响应实体返回对话
+     */
+    @GetMapping(value = "/singleChat/entity")
+    public Country chatEntity(@RequestParam("prompt") String prompt) {
+        return chatClient
+                .prompt()
+                .user(prompt)
+                .call()
+                .entity(Country.class);
+    }
+
+    /**
+     * SSE流式响应对话
      * @param prompt
      * @return
      */
@@ -56,29 +68,17 @@ public class OpenAiController {
     }
 
     /**
-     * Flux流式响应对话
+     * Flux-SSE流式响应对话
      * @param prompt
      * @param response
      * @return
      */
-    @GetMapping(value = "/stream/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/stream/sse/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> charStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         return chatClient.prompt()
                 .user(prompt)
                 .stream().content();
-    }
-
-    /**
-     * 同步响应实体返回对话
-     */
-    @GetMapping(value = "/chat/entity")
-    public Country chatEntity(@RequestParam("prompt") String prompt) {
-        return chatClient
-                .prompt()
-                .user(prompt)
-                .call()
-                .entity(Country.class);
     }
 
 }
