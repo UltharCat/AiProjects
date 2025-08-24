@@ -14,7 +14,7 @@ import java.util.Map;
 @Configuration
 public class AiClientConfig {
 
-    @Value("${client.type:ollama")
+    @Value("${client.type:ollama}")
     private String CLIENT_TYPE;
 
     /**
@@ -28,7 +28,7 @@ public class AiClientConfig {
      */
     @Bean("chatClient")
     public ChatClient chatClient(Map<String, ChatModel> allModels) {
-        String type = CLIENT_TYPE.trim().toLowerCase();
+        String type = CLIENT_TYPE.trim();
 
         // 按命名约定查找：typeChatModel
         String targetBeanName = type + "ChatModel";
