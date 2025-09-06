@@ -40,7 +40,7 @@ public class AiClientConfig {
 
         return ChatClient
                 .builder(model)
-                .defaultSystem("你是一个中国人，使用中文回答问题")
+                .defaultSystem("你是一个中国人，使用{language}回答问题")
                 .build();
     }
 

@@ -10,7 +10,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 @RestController
 @RequestMapping("/chat")
@@ -50,7 +53,7 @@ public class ChatController {
      * @return
      */
     @GetMapping("/stream/sse")
-    public SseEmitter charStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public SseEmitter chatStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         SseEmitter emitter = new SseEmitter();
         chatClient.prompt().user(prompt).stream().content().subscribe(
@@ -74,11 +77,72 @@ public class ChatController {
      * @return
      */
     @GetMapping(value = "/stream/sse/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> charStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public Flux<String> chatStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         return chatClient.prompt()
                 .user(prompt)
                 .stream().content();
+    }
+
+    /**
+     * streamable-http流式对话
+     * @param prompt
+     * @return
+     */
+    @GetMapping(value = "/stream/http", produces = MediaType.TEXT_PLAIN_VALUE)
+    public StreamingResponseBody chatStreamHttp(@RequestParam("prompt") String prompt) {
+        /*// 订阅式调用，无阻塞
+        return outputStream -> {
+            chatClient.prompt()
+                    .user(prompt)
+                    .stream()
+                    .content()
+                    .subscribe(
+                    content -> {
+                        try {
+                            outputStream.write(content.getBytes());
+                            outputStream.flush();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    error -> {},
+                    () -> {}
+            );
+        };*/
+        /*// 流式调用，自动IO阻塞
+        return outputStream -> {
+          chatClient.prompt()
+                  .user(prompt)
+                  .stream()
+                  .content()
+                  .toStream()
+                    .forEach(content -> {
+                        try {
+                            outputStream.write(content.getBytes());
+                            outputStream.flush();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        };*/
+        // 流式调用，手动切换线程避免阻塞Netty线程
+        return outputStream -> {
+          chatClient.prompt()
+                  .user(prompt)
+                  .stream()
+                  .content()
+                  .publishOn(Schedulers.boundedElastic()) // 切换到弹性线程池，避免阻塞Netty线程
+                  .doOnNext(content -> {
+                      try {
+                          outputStream.write(content.getBytes());
+                          outputStream.flush();
+                      } catch (Exception e) {
+                          throw new RuntimeException(e);
+                      }
+                  })
+                  .blockLast();
+        };
     }
 
 }
