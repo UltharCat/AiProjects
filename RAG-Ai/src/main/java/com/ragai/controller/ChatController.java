@@ -5,7 +5,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -13,10 +12,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 @RestController
 @RequestMapping("/chat")
@@ -56,7 +53,7 @@ public class ChatController {
      * @return
      */
     @GetMapping("/stream/sse")
-    public SseEmitter charStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public SseEmitter chatStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         SseEmitter emitter = new SseEmitter();
         chatClient.prompt().user(prompt).stream().content().subscribe(
@@ -80,7 +77,7 @@ public class ChatController {
      * @return
      */
     @GetMapping(value = "/stream/sse/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> charStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
+    public Flux<String> chatStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
         return chatClient.prompt()
                 .user(prompt)
@@ -88,35 +85,64 @@ public class ChatController {
     }
 
     /**
-     * streamable-HTTP流式响应对话
+     * streamable-http流式对话
      * @param prompt
      * @return
      */
     @GetMapping(value = "/stream/http", produces = MediaType.TEXT_PLAIN_VALUE)
-    public ResponseEntity<StreamingResponseBody> chatStreamHttp(@RequestParam("prompt") String prompt) {
-        StreamingResponseBody stream = output -> {
+    public StreamingResponseBody chatStreamHttp(@RequestParam("prompt") String prompt) {
+        /*// 订阅式调用，无阻塞
+        return outputStream -> {
             chatClient.prompt()
                     .user(prompt)
                     .stream()
                     .content()
-                    .publishOn(Schedulers.boundedElastic())
-                    .doOnNext(chunk -> {
+                    .subscribe(
+                    content -> {
                         try {
-                            output.write(chunk.getBytes(StandardCharsets.UTF_8));
-                            output.flush(); // 及时把分块推给客户端
-                        } catch (IOException e) {
+                            outputStream.write(content.getBytes());
+                            outputStream.flush();
+                        } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
-                    })
-                    .doFinally(sig -> {
-                        try { output.close(); } catch (IOException ignored) {}
-                    })
-                    .blockLast(); // 在专用写线程中等待完成
+                    },
+                    error -> {},
+                    () -> {}
+            );
+        };*/
+        /*// 流式调用，自动IO阻塞
+        return outputStream -> {
+          chatClient.prompt()
+                  .user(prompt)
+                  .stream()
+                  .content()
+                  .toStream()
+                    .forEach(content -> {
+                        try {
+                            outputStream.write(content.getBytes());
+                            outputStream.flush();
+                        } catch (Exception e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        };*/
+        // 流式调用，手动切换线程避免阻塞Netty线程
+        return outputStream -> {
+          chatClient.prompt()
+                  .user(prompt)
+                  .stream()
+                  .content()
+                  .publishOn(Schedulers.boundedElastic()) // 切换到弹性线程池，避免阻塞Netty线程
+                  .doOnNext(content -> {
+                      try {
+                          outputStream.write(content.getBytes());
+                          outputStream.flush();
+                      } catch (Exception e) {
+                          throw new RuntimeException(e);
+                      }
+                  })
+                  .blockLast();
         };
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
-                .body(stream);
     }
 
 }
