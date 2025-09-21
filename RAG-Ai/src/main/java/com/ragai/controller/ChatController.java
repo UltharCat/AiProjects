@@ -1,7 +1,6 @@
 package com.ragai.controller;
 
 import com.ragai.entity.Country;
-import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.client.ChatClient;
@@ -29,17 +28,15 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 public class ChatController {
 
     private final ChatClient chatClient;
-    private final ServletRequest httpServletRequest;
 
-    public ChatController(@Qualifier("chatClient") ChatClient chatClient, ServletRequest httpServletRequest) {
+    public ChatController(@Qualifier("chatClient") ChatClient chatClient) {
         this.chatClient = chatClient;
-        this.httpServletRequest = httpServletRequest;
     }
 
     /**
      * 同步接口响应对话
-     * @param prompt
-     * @return
+     * @param prompt 用户输入
+     * @return 回复内容
      */
     @GetMapping("/singleChat")
     public String chat(@RequestParam("prompt") String prompt) {
@@ -60,8 +57,9 @@ public class ChatController {
 
     /**
      * SSE流式响应对话
-     * @param prompt
-     * @return
+     * @param prompt 用户输入
+     * @param response HttpServletResponse
+     * @return SseEmitter
      */
     @GetMapping("/stream/sse")
     public SseEmitter chatStreamSse(@RequestParam("prompt") String prompt, HttpServletResponse response) {
@@ -83,9 +81,9 @@ public class ChatController {
 
     /**
      * Flux-SSE流式响应对话
-     * @param prompt
-     * @param response
-     * @return
+     * @param prompt 用户输入
+     * @param response HttpServletResponse
+     * @return Flux<String>
      */
     @GetMapping(value = "/stream/sse/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStreamFlux(@RequestParam("prompt") String prompt, HttpServletResponse response) {
@@ -97,8 +95,8 @@ public class ChatController {
 
     /**
      * streamable-http流式对话V1（乱码返回）
-     * @param prompt
-     * @return
+     * @param prompt 用户输入
+     * @return StreamingResponseBody
      */
     @GetMapping(value = "/stream/httpV1", produces = MediaType.TEXT_PLAIN_VALUE)
     public StreamingResponseBody chatStreamHttpV1(@RequestParam("prompt") String prompt) {
@@ -138,57 +136,53 @@ public class ChatController {
                     });
         };*/
         // 流式调用，手动切换线程避免阻塞Netty线程
-        return outputStream -> {
-          chatClient.prompt()
-                  .user(prompt)
-                  .stream()
-                  .content()
-                  .publishOn(Schedulers.boundedElastic()) // 切换到弹性线程池，避免阻塞Netty线程
-                  .doOnNext(content -> {
-                      try {
-                          outputStream.write(content.getBytes(StandardCharsets.UTF_8));
-                          outputStream.flush();
-                      } catch (Exception e) {
-                          throw new RuntimeException(e);
-                      }
-                  })
-                  .doFinally(sig -> {
-                      try {
-                          outputStream.close();
-                      } catch (IOException e) {
-                          throw new RuntimeException(e);
-                      }
-                  })
-                  .blockLast();
-        };
+        return outputStream -> chatClient.prompt()
+                .user(prompt)
+                .stream()
+                .content()
+                .publishOn(Schedulers.boundedElastic()) // 切换到弹性线程池，避免阻塞Netty线程
+                .doOnNext(content -> {
+                    try {
+                        outputStream.write(content.getBytes(StandardCharsets.UTF_8));
+                        outputStream.flush();
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .doFinally(sig -> {
+                    try {
+                        outputStream.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .blockLast();
     }
 
     /**
      * streamable-http流式对话V2（无乱码）
-     * @param prompt
-     * @return
+     * @param prompt 用户输入
+     * @return StreamingResponseBody
      */
     @GetMapping(value = "/stream/httpV2", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<StreamingResponseBody> chatStreamHttpV2(@RequestParam("prompt") String prompt) {
-        StreamingResponseBody stream = output -> {
-            chatClient.prompt()
-                    .user(prompt)
-                    .stream()
-                    .content()
-                    .publishOn(Schedulers.boundedElastic())
-                    .doOnNext(chunk -> {
-                        try {
-                            output.write(chunk.getBytes(StandardCharsets.UTF_8));
-                            output.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .doFinally(sig -> {
-                        try { output.close(); } catch (IOException ignored) {}
-                    })
-                    .blockLast();
-        };
+        StreamingResponseBody stream = output -> chatClient.prompt()
+                .user(prompt)
+                .stream()
+                .content()
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(chunk -> {
+                    try {
+                        output.write(chunk.getBytes(StandardCharsets.UTF_8));
+                        output.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .doFinally(sig -> {
+                    try { output.close(); } catch (IOException ignored) {}
+                })
+                .blockLast();
         // ResponseEntity可以设置更多响应头，使流式返回格式限定为UTF-8
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
@@ -197,41 +191,40 @@ public class ChatController {
 
     /**
      * streamable-http流式对话V2（无乱码）
-     * @param prompt
-     * @return
+     * @param prompt 用户输入
+     * @param httpServletRequest HttpServletRequest
+     * @return StreamingResponseBody
      */
     @GetMapping(value = "/memory/stream/http", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<StreamingResponseBody> memoryStreamHttp(@RequestParam("prompt") String prompt, HttpServletRequest httpServletRequest) {
         String sessionId = httpServletRequest.getSession().getId();
-        StreamingResponseBody stream = output -> {
-            chatClient.prompt()
-                    .user(prompt)
-                    .system(sp->
-                            sp.params(Map.of(
-                            "language", "日语"))
-                    )
-                    .advisors(a->
-                            a.params(Map.of(
-                                    CHAT_MEMORY_CONVERSATION_ID_KEY, sessionId,
-                                    CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100
-                            ))
-                    )
-                    .stream()
-                    .content()
-                    .publishOn(Schedulers.boundedElastic())
-                    .doOnNext(chunk -> {
-                        try {
-                            output.write(chunk.getBytes(StandardCharsets.UTF_8));
-                            output.flush();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-                    .doFinally(sig -> {
-                        try { output.close(); } catch (IOException ignored) {}
-                    })
-                    .blockLast();
-        };
+        StreamingResponseBody stream = output -> chatClient.prompt()
+                .user(prompt)
+                .system(sp->
+                        sp.params(Map.of(
+                        "language", "日语"))
+                )
+                .advisors(a->
+                        a.params(Map.of(
+                                CHAT_MEMORY_CONVERSATION_ID_KEY, sessionId,
+                                CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100
+                        ))
+                )
+                .stream()
+                .content()
+                .publishOn(Schedulers.boundedElastic())
+                .doOnNext(chunk -> {
+                    try {
+                        output.write(chunk.getBytes(StandardCharsets.UTF_8));
+                        output.flush();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .doFinally(sig -> {
+                    try { output.close(); } catch (IOException ignored) {}
+                })
+                .blockLast();
         // ResponseEntity可以设置更多响应头，使流式返回格式限定为UTF-8
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))

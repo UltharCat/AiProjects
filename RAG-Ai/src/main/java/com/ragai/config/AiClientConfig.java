@@ -25,8 +25,8 @@ public class AiClientConfig {
      * com.alibaba.cloud.ai 的 com/alibaba/cloud/ai/autoconfigure/dashscope/DashScopeAutoConfiguration
      * spring-ai-ollama-spring-boot-starter 的 org/springframework/ai/autoconfigure/ollama/OllamaAutoConfiguration
      * 以上三个starter都自动装配了各自的ChatModel
-     * @param allModels
-     * @return
+     * @param allModels Spring IOC容器中所有的ChatModel
+     * @return ChatClient 实例
      */
     @Bean("chatClient")
     public ChatClient chatClient(Map<String, ChatModel> allModels, ChatMemory chatMemory) {

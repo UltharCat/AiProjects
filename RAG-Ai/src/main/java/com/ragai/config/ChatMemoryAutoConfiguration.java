@@ -16,7 +16,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 public class ChatMemoryAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(prefix = "app.chat.memory", name = "type", havingValue = "redis", matchIfMissing = false)
+    @ConditionalOnProperty(prefix = "app.chat.memory", name = "type", havingValue = "redis")
     public ChatMemory redisChatMemory(StringRedisTemplate stringRedisTemplate,
                                            ObjectMapper objectMapper,
                                            ChatMemoryProperties props) {
