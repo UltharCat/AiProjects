@@ -1,0 +1,7 @@
+# 思路记录
+1. AOT的作用和几个继承类的作用（或许可以作为提前进行config参数和自动装配类编译的选择），该处AOT源自几个AI相关jar包下均有的内容
+2. 针对多种不同model，如chatModel、ImageModel、AudioModel，发现其实ollama下也好，openai下也好，其实都存在对应的model，应该是可以和alibaba的适配，那么就需要考虑构建一个合适的工厂来动态提供不同的model
+3. 同时发现ollama包和openai包下都存在api的调用类，其实之前的client类应该是可以被完全替代，并且之后的ImageModel和Audio调用也应该可以替代，只是需要考虑差异
+
+# 问题记录
+1. dashscope没有chatClient，之前的client错误，当前项目仅能通过Openai和ollama调用ChatClient
