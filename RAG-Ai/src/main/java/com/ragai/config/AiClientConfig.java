@@ -1,6 +1,8 @@
 package com.ragai.config;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -27,7 +29,7 @@ public class AiClientConfig {
      * @return
      */
     @Bean("chatClient")
-    public ChatClient chatClient(Map<String, ChatModel> allModels) {
+    public ChatClient chatClient(Map<String, ChatModel> allModels, ChatMemory chatMemory) {
         String type = CLIENT_TYPE.trim();
 
         // 按命名约定查找：typeChatModel
@@ -41,7 +43,7 @@ public class AiClientConfig {
         return ChatClient
                 .builder(model)
                 .defaultSystem("你是一个中国人，使用{language}回答问题")
-                .defaultAdvisors()
+                .defaultAdvisors(new MessageChatMemoryAdvisor(chatMemory))
                 .build();
     }
 

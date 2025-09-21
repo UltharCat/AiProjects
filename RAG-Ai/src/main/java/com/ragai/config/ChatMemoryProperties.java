@@ -29,4 +29,10 @@ public class ChatMemoryProperties {
      */
     private Duration ttl = Duration.ofHours(24);
 
+    /**
+     * 最大消息数，默认20，超过裁剪最早的消息
+     * <=0 表示不裁剪
+     */
+    private int maxMessages = 20;
+
 }

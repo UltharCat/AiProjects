@@ -1,6 +1,8 @@
 package com.ragai.controller;
 
 import com.ragai.entity.Country;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -17,15 +19,21 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
+import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
 
     private final ChatClient chatClient;
+    private final ServletRequest httpServletRequest;
 
-    public ChatController(@Qualifier("chatClient") ChatClient chatClient) {
+    public ChatController(@Qualifier("chatClient") ChatClient chatClient, ServletRequest httpServletRequest) {
         this.chatClient = chatClient;
+        this.httpServletRequest = httpServletRequest;
     }
 
     /**
@@ -88,7 +96,7 @@ public class ChatController {
     }
 
     /**
-     * streamable-http流式对话V1
+     * streamable-http流式对话V1（乱码返回）
      * @param prompt
      * @return
      */
@@ -138,7 +146,7 @@ public class ChatController {
                   .publishOn(Schedulers.boundedElastic()) // 切换到弹性线程池，避免阻塞Netty线程
                   .doOnNext(content -> {
                       try {
-                          outputStream.write(content.getBytes());
+                          outputStream.write(content.getBytes(StandardCharsets.UTF_8));
                           outputStream.flush();
                       } catch (Exception e) {
                           throw new RuntimeException(e);
@@ -156,7 +164,7 @@ public class ChatController {
     }
 
     /**
-     * streamable-http流式对话V2
+     * streamable-http流式对话V2（无乱码）
      * @param prompt
      * @return
      */
@@ -165,6 +173,49 @@ public class ChatController {
         StreamingResponseBody stream = output -> {
             chatClient.prompt()
                     .user(prompt)
+                    .stream()
+                    .content()
+                    .publishOn(Schedulers.boundedElastic())
+                    .doOnNext(chunk -> {
+                        try {
+                            output.write(chunk.getBytes(StandardCharsets.UTF_8));
+                            output.flush();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .doFinally(sig -> {
+                        try { output.close(); } catch (IOException ignored) {}
+                    })
+                    .blockLast();
+        };
+        // ResponseEntity可以设置更多响应头，使流式返回格式限定为UTF-8
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
+                .body(stream);
+    }
+
+    /**
+     * streamable-http流式对话V2（无乱码）
+     * @param prompt
+     * @return
+     */
+    @GetMapping(value = "/memory/stream/http", produces = MediaType.TEXT_PLAIN_VALUE)
+    public ResponseEntity<StreamingResponseBody> memoryStreamHttp(@RequestParam("prompt") String prompt, HttpServletRequest httpServletRequest) {
+        String sessionId = httpServletRequest.getSession().getId();
+        StreamingResponseBody stream = output -> {
+            chatClient.prompt()
+                    .user(prompt)
+                    .system(sp->
+                            sp.params(Map.of(
+                            "language", "日语"))
+                    )
+                    .advisors(a->
+                            a.params(Map.of(
+                                    CHAT_MEMORY_CONVERSATION_ID_KEY, sessionId,
+                                    CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100
+                            ))
+                    )
                     .stream()
                     .content()
                     .publishOn(Schedulers.boundedElastic())
