@@ -11,6 +11,7 @@
     <modules>
         <module>RAG-Base</module>
         <module>RAG-Ai</module>
+        <module>RAG-Ai-Alibaba</module>
     </modules>
 
     <packaging>pom</packaging>
