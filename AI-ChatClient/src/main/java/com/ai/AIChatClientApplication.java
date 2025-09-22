@@ -6,10 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan(basePackages = "com.ai.config")
-public class RagAiApplication {
+public class AIChatClientApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(RagAiApplication.class, args);
+        SpringApplication.run(AIChatClientApplication.class, args);
     }
 
 }

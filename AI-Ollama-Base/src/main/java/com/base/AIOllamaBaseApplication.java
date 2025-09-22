@@ -4,10 +4,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class RagBaseApplication {
+public class AIOllamaBaseApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(RagBaseApplication.class, args);
+        SpringApplication.run(AIOllamaBaseApplication.class, args);
     }
 
 }

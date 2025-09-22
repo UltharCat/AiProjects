@@ -6,10 +6,10 @@ import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 @SpringBootApplication
 @ConfigurationPropertiesScan(basePackages = "com.ai.alibaba.config")
-public class RagAiAlibabaApplication {
+public class AIAlibabaModelApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(RagAiAlibabaApplication.class, args);
+        SpringApplication.run(AIAlibabaModelApplication.class, args);
     }
 
 }
