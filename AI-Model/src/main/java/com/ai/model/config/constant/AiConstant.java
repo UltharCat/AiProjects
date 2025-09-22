@@ -2,7 +2,7 @@ package com.ai.model.config.constant;
 
 import lombok.Getter;
 
-public class AiConstant {
+public final class AiConstant {
 
     @Getter
     public enum IntegrationType {
