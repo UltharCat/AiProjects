@@ -9,7 +9,7 @@
         <relativePath>../pom.xml</relativePath> <!-- lookup parent from repository -->
     </parent>
 
-    <artifactId>RAG-Ai-Alibaba</artifactId>
+    <artifactId>AI-Alibaba</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>RAG-Ai-Alibaba</name>
 

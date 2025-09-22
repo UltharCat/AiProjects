@@ -9,7 +9,7 @@
         <relativePath>../pom.xml</relativePath> <!-- lookup parent from repository -->
     </parent>
 
-    <artifactId>RAG-Base</artifactId>
+    <artifactId>AI-Ollama-Base</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>RAG-Base</name>
 

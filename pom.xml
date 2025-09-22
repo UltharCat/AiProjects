@@ -9,9 +9,9 @@
     <name>AiProjects</name>
 
     <modules>
-        <module>RAG-Base</module>
-        <module>RAG-Ai</module>
-        <module>RAG-Ai-Alibaba</module>
+        <module>AI-Ollama-Base</module>
+        <module>AI-ChatClient</module>
+        <module>AI-Alibaba</module>
     </modules>
 
     <packaging>pom</packaging>
