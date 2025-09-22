@@ -1,11 +1,11 @@
-package com.ragai.alibaba.config;
+package com.ragai.alibaba.config.memory;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
 
-@ConfigurationProperties(prefix = "app.chat.memory")
+@ConfigurationProperties(prefix = "x-project.app.chat.memory")
 @Data
 public class ChatMemoryProperties {
 

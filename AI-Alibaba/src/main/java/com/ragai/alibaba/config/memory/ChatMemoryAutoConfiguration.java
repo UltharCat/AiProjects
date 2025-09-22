@@ -1,7 +1,6 @@
-package com.ragai.alibaba.config;
+package com.ragai.alibaba.config.memory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ragai.alibaba.config.memory.RedisChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -16,7 +15,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 public class ChatMemoryAutoConfiguration {
 
     @Bean
-    @ConditionalOnProperty(prefix = "app.chat.memory", name = "type", havingValue = "redis")
+    @ConditionalOnProperty(prefix = "x-project.app.chat.memory", name = "type", havingValue = "redis")
     public ChatMemory redisChatMemory(StringRedisTemplate stringRedisTemplate,
                                            ObjectMapper objectMapper,
                                            ChatMemoryProperties props) {
