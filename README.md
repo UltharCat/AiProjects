@@ -1,3 +1,6 @@
+# 项目记录
+1. AI-Alibaba-Model是一个停止的项目，原因在于Alibaba依赖对其公司的QWen模型支持都不到位。可以通过配置DashScope配置使用Qwen-Max，但对于多模态的Qwen-mini-turbo却不支持，无法支撑后续的多模态开发，不然就得在其他使用阶段切换模型。其次是DashScope类的Model集成内容太多，不喜欢使用。
+
 # 思路记录
 1. AOT的作用和几个继承类的作用（或许可以作为提前进行config参数和自动装配类编译的选择），该处AOT源自几个AI相关jar包下均有的内容
 2. 针对多种不同model，如chatModel、ImageModel、AudioModel，发现其实ollama下也好，openai下也好，其实都存在对应的model，应该是可以和alibaba的适配，那么就需要考虑构建一个合适的工厂来动态提供不同的model
