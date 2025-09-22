@@ -11,7 +11,7 @@
 
     <artifactId>AI-Alibaba-Model</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>RAG-Ai-Alibaba</name>
+    <name>AI-Alibaba-Model</name>
 
     <dependencies>
         <dependency>

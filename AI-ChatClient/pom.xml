@@ -11,7 +11,7 @@
 
     <artifactId>AI-ChatClient</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>RAG-Ai</name>
+    <name>AI-ChatClient</name>
 
     <dependencies>
         <dependency>
