@@ -8,6 +8,7 @@
 2. spring-ai-core下的aot类值得研究
 3. 同时发现ollama包和openai包下都存在api的调用类，其实之前的client类应该是可以被完全替代，并且之后的ImageModel和Audio调用也应该可以替代，只是需要考虑差异
 4. 可以内置一个sqlite的数据库，升级上下文缓存子项目的适配范围
+5. 虽然在controller中使用了类变量，但是没做到绑定用户，应该使用一个map进行chat参数类的关联，这个参数类包括integrationType、message（message主要预存user信息），key可以使用Token，再通过redis设置ttl
 
 # 问题记录
 1. dashscope没有chatClient，之前的client错误，当前项目仅能通过Openai和ollama调用ChatClient
