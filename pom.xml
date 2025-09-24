@@ -12,6 +12,7 @@
         <module>AI-Ollama-Base</module>
         <module>AI-ChatClient</module>
         <module>AI-Alibaba-Model</module>
+        <module>AI-Model</module>
     </modules>
 
     <packaging>pom</packaging>
