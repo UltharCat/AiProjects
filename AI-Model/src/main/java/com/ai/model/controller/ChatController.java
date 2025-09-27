@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ai.model.config.constant.AiConstant.*;
 
 @RestController
-@RequestMapping("/ai")
+@RequestMapping("/chat")
 public class ChatController {
 
     private final AiModelFactory aiModelFactory;
