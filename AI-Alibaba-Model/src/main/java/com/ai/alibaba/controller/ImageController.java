@@ -2,7 +2,6 @@ package com.ai.alibaba.controller;
 
 import com.ai.alibaba.config.model.AiModelFactory;
 import com.alibaba.cloud.ai.dashscope.image.DashScopeImageModel;
-import com.alibaba.cloud.ai.dashscope.image.DashScopeImageOptions;
 import org.springframework.ai.image.ImageOptions;
 import org.springframework.ai.image.ImageOptionsBuilder;
 import org.springframework.ai.image.ImagePrompt;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ImageController {
 
 
-    private DashScopeImageModel aiModel;
+    private final DashScopeImageModel aiModel;
 
     public ImageController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory) {
         this.aiModel = (DashScopeImageModel) aiModelFactory.getModel("dashscope-image");
