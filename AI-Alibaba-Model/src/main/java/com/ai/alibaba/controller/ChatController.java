@@ -3,8 +3,10 @@ package com.ai.alibaba.controller;
 import com.ai.alibaba.config.model.AiModelFactory;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
-import jakarta.servlet.http.HttpServletRequest;
+import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
+import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.Model;
@@ -24,9 +26,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
-
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
@@ -35,9 +34,13 @@ public class ChatController {
 
     private Model<?, ?> aiModel;
 
-    public ChatController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory) {
+    private final ConfigurablePromptTemplateFactory promptTemplateFactory;
+
+    public ChatController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory,
+                          ConfigurablePromptTemplateFactory promptTemplateFactory) {
         this.aiModelFactory = aiModelFactory;
         this.aiModel = aiModelFactory.getModel(null);
+        this.promptTemplateFactory = promptTemplateFactory;
     }
 
     /**
@@ -175,5 +178,16 @@ public class ChatController {
 //                .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
 //                .body(stream);
 //    }
+
+    @GetMapping("/promptTemplateChat")
+    public AssistantMessage promptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
+        ConfigurablePromptTemplate template = promptTemplateFactory.getTemplate("test-template");
+        if (template == null) {
+            template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况");
+        }
+        Prompt prompt = template.create(Map.of("city", input));
+
+        return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
+    }
 
 }
