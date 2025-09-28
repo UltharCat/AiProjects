@@ -18,3 +18,4 @@
    1. 其实使用的chatClient是通过spring-ai的ChatClient类使用各自模型的model构建的，并无错误
    2. 但image和audio的调用却没有client类进行适配，导致需要直接使用各自的model类
 2. 语音识别下alibaba组件使用MultiModalConversation进行处置
+   1. alibaba依赖中的dashscope组件版本过低，无MultiModalConversation

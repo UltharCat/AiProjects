@@ -26,7 +26,7 @@ public class AudioTranscriptionController {
      * @return 回复内容
      */
     @GetMapping("/singleTranscription")
-    public String chat() throws MalformedURLException {
+    public String transcription() throws MalformedURLException {
         Resource resource = new UrlResource("https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female.wav");
         DashScopeAudioTranscriptionOptions options = DashScopeAudioTranscriptionOptions.builder()
                 .withModel("sensevoice-v1")

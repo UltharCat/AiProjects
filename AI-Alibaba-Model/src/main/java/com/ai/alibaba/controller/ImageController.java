@@ -29,7 +29,7 @@ public class ImageController {
      * @return 回复内容
      */
     @GetMapping("/singleImage")
-    public String chat(@RequestParam("input") String input) {
+    public String image(@RequestParam("input") String input) {
         ImageOptions options = ImageOptionsBuilder.builder()
                 .model("wanx2.1-t2i-turbo")
                 .height(1024)

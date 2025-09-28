@@ -29,7 +29,7 @@ public class AudioSynthesisController {
      * @return 回复内容
      */
     @GetMapping("/singleSynthesis")
-    public ResponseEntity<byte[]> chat(@RequestParam("input") String input) {
+    public ResponseEntity<byte[]> synthesis(@RequestParam("input") String input) {
         SpeechSynthesisPrompt prompt = new SpeechSynthesisPrompt(input);
         ByteBuffer audio = aiModel.call(prompt).getResult().getOutput().getAudio();
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM)
