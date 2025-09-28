@@ -1,6 +1,7 @@
 package com.ai.alibaba.controller;
 
 import com.ai.alibaba.config.model.AiModelFactory;
+import com.ai.alibaba.entity.Country;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
@@ -9,8 +10,10 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.model.Model;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,6 +68,37 @@ public class ChatController {
         Prompt prompt = new Prompt(input, options);
         ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
         return call.getResult().getOutput().getText();
+    }
+
+    /**
+     * 同步响应结构化实体返回对话
+     */
+    @GetMapping(value = "/singleChat/entity")
+    public Country chatEntity(@RequestParam("input") String input) {
+        // 指示模型仅返回严格 JSON，字段按 Country 定义
+        String instruction = "请仅返回严格的 JSON，不要包含任何解释或额外文本，JSON 字段与 Country 类一致。";
+        String promptInput = instruction + "\n\n用户输入: " + input;
+
+        DashScopeChatOptions options = DashScopeChatOptions.builder()
+                .withMaxToken(1500)
+                .build();
+        Prompt prompt = new Prompt(promptInput, options);
+        ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
+        String text = call.getResult().getOutput().getText();
+
+        var converter = new BeanOutputConverter<>(new ParameterizedTypeReference<Country>() {});
+
+        try {
+            // 直接使用 converter 进行结构化转换
+            return converter.convert(text);
+        } catch (Exception e) {
+            // 回退方案：使用 Jackson 解析严格 JSON
+            try {
+                return new com.fasterxml.jackson.databind.ObjectMapper().readValue(text, Country.class);
+            } catch (Exception ex) {
+                throw new RuntimeException("Country 转换失败: " + ex.getMessage(), ex);
+            }
+        }
     }
 
     /**
