@@ -179,8 +179,13 @@ public class ChatController {
 //                .body(stream);
 //    }
 
-    @GetMapping("/promptTemplateChat")
-    public AssistantMessage promptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
+    /**
+     * 通过模板配置工厂基于配置化模板的对话
+     * @param input
+     * @return
+     */
+    @GetMapping("/promptTemplateFactoryChat")
+    public AssistantMessage promptTemplateFactoryChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
         ConfigurablePromptTemplate template = promptTemplateFactory.getTemplate("test-template");
         if (template == null) {
             template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况");
