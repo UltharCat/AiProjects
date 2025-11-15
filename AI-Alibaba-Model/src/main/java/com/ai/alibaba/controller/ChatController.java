@@ -216,7 +216,7 @@ public class ChatController {
 //    }
 
     /**
-     * 通过模板配置工厂基于配置化模板的对话
+     * 通过模板配置工厂基于配置化模板快捷构造userMessage的对话
      * @param input
      * @return
      */
@@ -233,7 +233,7 @@ public class ChatController {
     }
 
     /**
-     * 通过模板配置文件的对话
+     * 通过模板配置文件快捷构造userMessage的对话
      * @param input
      * @return
      */
