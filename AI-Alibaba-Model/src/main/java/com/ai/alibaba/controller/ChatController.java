@@ -7,9 +7,11 @@ import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.ai.ResourceUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.model.Model;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -225,6 +227,21 @@ public class ChatController {
             template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况");
         }
         Prompt prompt = template.create(Map.of("city", input));
+
+        return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
+    }
+
+    /**
+     * 通过模板配置文件的对话
+     * @param input
+     * @return
+     */
+    @GetMapping("/promptTemplateChat")
+    public AssistantMessage promptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
+        Prompt prompt = new PromptTemplate(
+                    ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+                )
+                .create(Map.of("city", input));
 
         return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
     }
