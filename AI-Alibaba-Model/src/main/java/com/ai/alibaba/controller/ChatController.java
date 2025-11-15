@@ -225,6 +225,7 @@ public class ChatController {
         ConfigurablePromptTemplate template = promptTemplateFactory.getTemplate("test-template");
         if (template == null) {
             template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况");
+//            template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况", Map.of("city", input));
         }
         Prompt prompt = template.create(Map.of("city", input));
 
