@@ -244,6 +244,11 @@ public class ChatController {
                 )
                 .create(Map.of("city", input));
 
+//        Prompt prompt = new PromptTemplate(
+//                ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+//                , Map.of("city", input)
+//        ).create();
+
         return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
     }
 
