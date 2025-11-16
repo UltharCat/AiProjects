@@ -117,7 +117,10 @@ public class ChatController {
         SseEmitter emitter = new SseEmitter();
         DashScopeChatOptions options = DashScopeChatOptions.builder().build();
         Prompt prompt = new Prompt(input, options);
-        ((DashScopeChatModel) aiModel).stream(prompt).subscribe(
+        ((DashScopeChatModel) aiModel)
+                .stream(prompt)
+                .publishOn(Schedulers.boundedElastic())
+                .subscribe(
                 // 对应函数式接口方法签名实现（即具备和函数式接口方法相同的入参和返回），同理emitter::completeWithError并不需要继承或实现Consumer，只需要相同的方法签名即可
                 chunk -> {
                     try {
