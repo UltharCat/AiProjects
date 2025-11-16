@@ -29,6 +29,8 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 @RestController
@@ -104,7 +106,7 @@ public class ChatController {
     }
 
     /**
-     * SSE流式响应对话
+     * SSE流式响应对话（MVC编程）
      * @param input 用户输入
      * @param response HttpServletResponse
      * @return SseEmitter
@@ -115,18 +117,23 @@ public class ChatController {
         SseEmitter emitter = new SseEmitter();
         DashScopeChatOptions options = DashScopeChatOptions.builder().build();
         Prompt prompt = new Prompt(input, options);
-        ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
-        String text = call.getResult().getOutput().getText();
-        try {
-            emitter.send(text);
-        } catch (IOException e) {
-            emitter.completeWithError(e);
-        }
+        ((DashScopeChatModel) aiModel).stream(prompt).subscribe(
+                // 对应函数式接口方法签名实现（即具备和函数式接口方法相同的入参和返回），同理emitter::completeWithError并不需要继承或实现Consumer，只需要相同的方法签名即可
+                chunk -> {
+                    try {
+                        emitter.send(chunk);
+                    } catch (Exception e) {
+                        emitter.completeWithError(e);
+                    }
+                },
+                emitter::completeWithError,
+                emitter::complete
+        );
         return emitter;
     }
 
     /**
-     * Flux-SSE流式响应对话
+     * Flux-SSE流式响应对话（WebFlux冷流响应式编程）
      * @param input 用户输入
      * @param response HttpServletResponse
      * @return Flux<String>
@@ -134,14 +141,27 @@ public class ChatController {
     @GetMapping(value = "/stream/sse/flux", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> chatStreamFlux(@RequestParam("input") String input, HttpServletResponse response) {
         response.setContentType("text/event-stream;charset=UTF-8");
+        // 外部构造prompt避免匿名实现中重复构造
         DashScopeChatOptions options = DashScopeChatOptions.builder().build();
         Prompt prompt = new Prompt(input, options);
-        return Flux.defer(() -> {
-            ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
-            String text = call.getResult().getOutput().getText();
-            // 如需分片流式返回，可将 text 拆分然后返回 Flux.fromArray(...)
-            return Flux.just(text);
-        }).subscribeOn(Schedulers.boundedElastic());
+        // 通过Flux.defer延迟执行，无defer的情况下会在程序初始化时就创建flux发布者，导致后续的flux订阅始终面向一个发布者，defer的作用有两点：1.延迟加载 2.每次请求订阅时创建新的发布者
+        return Flux.defer(() -> ((DashScopeChatModel) aiModel)
+                // 获取flux流式响应（Flux的stream是动态推送处置的，对比的collection的stream则是静态的集合数据遍历处理）
+                .stream(prompt)
+                //.publishOn(Schedulers.boundedElastic())
+                // 处理流式响应内容，提取文本
+                .map(chatResponse -> {
+                        if (chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null) {
+                            return chatResponse.getResult().getOutput().getText();
+                        } else {
+                            return "";
+                        }
+                    }
+                )
+        )
+        // 将上游处理切换到弹性线程池中异步执行
+        // 包括defer延迟执行和后续supplier发布者的创建，如果subscribeOn在supplier实现内部，则只是将supplier的实现放在了弹性线程池中，不过区别不大，且如果在内部，也会有stream()可能已有线程，无法切换的问题
+        .subscribeOn(Schedulers.boundedElastic());
     }
 
     /**
@@ -151,23 +171,32 @@ public class ChatController {
      */
     @GetMapping(value = "/stream/http", produces = MediaType.TEXT_PLAIN_VALUE)
     public ResponseEntity<StreamingResponseBody> chatStreamHttpV2(@RequestParam("input") String input) {
-        StreamingResponseBody stream = output -> {
-            DashScopeChatOptions options = DashScopeChatOptions.builder().build();
-            Prompt prompt = new Prompt(input, options);
-            ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
-            String text = call.getResult().getOutput().getText();
-            try (output) {
-                try {
-                    byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
-                    output.write(bytes);
-                    output.flush();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            } catch (IOException ignored) {
-            }
-        };
+        DashScopeChatOptions options = DashScopeChatOptions.builder().build();
+        Prompt prompt = new Prompt(input, options);
+
+        StreamingResponseBody stream = outputStream -> ((DashScopeChatModel) aiModel)
+                        .stream(prompt)
+                        // 下游有阻塞 I/O、重 CPU 或复杂处理，使用publishOn将下游处理doOnNext和doFinally的处理切换到弹性线程池中异步执行
+                        .publishOn(Schedulers.boundedElastic())
+                        .doOnNext(chunk -> {
+                            try {
+                                byte[] bytes = chunk.getResult().getOutput().getText().getBytes(StandardCharsets.UTF_8);
+                                // I/O阻塞操作
+                                outputStream.write(bytes);
+                                outputStream.flush();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        })
+                        .doFinally(sig -> {
+                            try {
+                                // I/O阻塞操作
+                                outputStream.close();
+                            } catch (IOException ignored) {}
+                        })
+                        .blockLast();
         // ResponseEntity可以设置更多响应头，使流式返回格式限定为UTF-8
+        // 该return其实是该流式传输的蓝图，规范了返回的通道是stream和格式，不过存在问题：一旦成功后就会确定http状态，后续消息传输无法更改这个状态
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/plain;charset=UTF-8"))
                 .body(stream);
