@@ -9,9 +9,11 @@ import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.ResourceUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
+import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.model.Model;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -29,8 +31,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.Map;
 
 @RestController
@@ -281,6 +282,25 @@ public class ChatController {
 //                , Map.of("city", input)
 //        ).create();
 
+        return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
+    }
+
+    /**
+     * 模板构造systemMessage的对话
+     * @param input
+     * @return
+     */
+    @GetMapping("/sysPromptTemplateChat")
+    public AssistantMessage sysPromptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
+        Message systemMessage = new SystemPromptTemplate(
+                ResourceUtils.getText("classpath:prompts/weather-system-prompt.st")
+        ).createMessage();
+
+        Message userMessage = new PromptTemplate(
+                ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+        ).createMessage(Map.of("city", input));
+
+        Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage));
         return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
     }
 
