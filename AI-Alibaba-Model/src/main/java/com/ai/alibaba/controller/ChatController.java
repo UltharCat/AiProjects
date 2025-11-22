@@ -273,12 +273,12 @@ public class ChatController {
     @GetMapping("/promptTemplateChat")
     public AssistantMessage promptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
         Prompt prompt = new PromptTemplate(
-                    ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+                    ResourceUtils.getText("classpath:prompts/user.st")
                 )
                 .create(Map.of("city", input));
 
 //        Prompt prompt = new PromptTemplate(
-//                ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+//                ResourceUtils.getText("classpath:prompts/user.st")
 //                , Map.of("city", input)
 //        ).create();
 
@@ -293,15 +293,44 @@ public class ChatController {
     @GetMapping("/sysPromptTemplateChat")
     public AssistantMessage sysPromptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
         Message systemMessage = new SystemPromptTemplate(
-                ResourceUtils.getText("classpath:prompts/weather-system-prompt.st")
+                ResourceUtils.getText("classpath:prompts/system.st")
         ).createMessage();
 
         Message userMessage = new PromptTemplate(
-                ResourceUtils.getText("classpath:prompts/weather-prompt.st")
+                ResourceUtils.getText("classpath:prompts/user.st")
         ).createMessage(Map.of("city", input));
 
         Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage));
         return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
+    }
+
+    /**
+     * 静态RAG聊天示例
+     * @param question
+     * @return
+     */
+    @GetMapping(value = "/staticRagChat", produces =  MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> staticRagChat(@RequestParam(value = "question", defaultValue = "请告知文件概要信息") String question, HttpServletResponse response) {
+        response.setContentType("text/event-stream;charset=UTF-8");
+        Message systemMessage = new SystemPromptTemplate(ResourceUtils.getText("classpath:prompts/policy/system.st")).createMessage();
+        Message userMessage = new SystemPromptTemplate(ResourceUtils.getText("classpath:prompts/policy/user.st"))
+                .createMessage(
+                        Map.of("context", ResourceUtils.getText("classpath:docs/md/中共中央关于制定国民经济和社会发展第十五个五年规划的建议_中央有关文件_中国政府网/中共中央关于制定国民经济和社会发展第十五个五年规划的建议_中央有关文件_中国政府网.md"),
+                                "question", question
+                ));
+        Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage));
+
+        return Flux.defer(() -> ((DashScopeChatModel) aiModel)
+                .stream(prompt)
+                .map(chatResponse -> {
+                            if (chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null) {
+                                return chatResponse.getResult().getOutput().getText();
+                            } else {
+                                return "";
+                            }
+                        }
+                )
+        ).subscribeOn(Schedulers.boundedElastic());
     }
 
 }
