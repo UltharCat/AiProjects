@@ -6,6 +6,7 @@ import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.ResourceUtils;
 import org.springframework.ai.chat.messages.AssistantMessage;
@@ -81,7 +82,7 @@ public class ChatController {
     @GetMapping(value = "/singleChat/entity")
     public Country chatEntity(@RequestParam("input") String input) {
         // 指示模型仅返回严格 JSON，字段按 Country 定义
-        String instruction = "请仅返回严格的 JSON，不要包含任何解释或额外文本，JSON 字段与 Country 类一致。";
+        String instruction = "请仅返回严格的 JSON，不要包含任何解释或额外文本。";
         String promptInput = instruction + "\n\n用户输入: " + input;
 
         DashScopeChatOptions options = DashScopeChatOptions.builder()
@@ -99,9 +100,9 @@ public class ChatController {
         } catch (Exception e) {
             // 回退方案：使用 Jackson 解析严格 JSON
             try {
-                return new com.fasterxml.jackson.databind.ObjectMapper().readValue(text, Country.class);
+                return new ObjectMapper().readValue(text, Country.class);
             } catch (Exception ex) {
-                throw new RuntimeException("Country 转换失败: " + ex.getMessage(), ex);
+                throw new RuntimeException("实体类转换失败: " + ex.getMessage(), ex);
             }
         }
     }
