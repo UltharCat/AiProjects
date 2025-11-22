@@ -319,7 +319,13 @@ public class ChatController {
                         Map.of("context", ResourceUtils.getText("classpath:docs/md/中共中央关于制定国民经济和社会发展第十五个五年规划的建议_中央有关文件_中国政府网/中共中央关于制定国民经济和社会发展第十五个五年规划的建议_中央有关文件_中国政府网.md"),
                                 "question", question
                 ));
-        Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage));
+        DashScopeChatOptions options = DashScopeChatOptions.builder()
+                // temperature越低越倾向RAG，多样性低
+                .withTemperature(0.5)
+                // TopP选择token采样范围，越大生成内容的采样范围越大，随机性越大
+                .withTopP(0.9)
+                .build();
+        Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage), options);
 
         return Flux.defer(() -> ((DashScopeChatModel) aiModel)
                 .stream(prompt)
