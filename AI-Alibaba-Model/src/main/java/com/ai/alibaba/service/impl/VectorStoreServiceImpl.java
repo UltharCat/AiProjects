@@ -1,7 +1,6 @@
 package com.ai.alibaba.service.impl;
 
 import com.ai.alibaba.service.VectorStoreService;
-import com.alibaba.cloud.ai.advisor.DocumentRetrievalAdvisor;
 import com.alibaba.cloud.ai.dashscope.api.DashScopeApi;
 import com.alibaba.cloud.ai.dashscope.rag.*;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @Slf4j
