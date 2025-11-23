@@ -2,29 +2,36 @@ package com.ai.alibaba.controller;
 
 import com.ai.alibaba.config.model.AiModelFactory;
 import com.ai.alibaba.entity.Country;
+import com.ai.alibaba.service.VectorStoreService;
+import com.alibaba.cloud.ai.advisor.DocumentRetrievalAdvisor;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
 import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.ai.ResourceUtils;
+import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.chat.prompt.SystemPromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
+import org.springframework.ai.document.Document;
 import org.springframework.ai.model.Model;
+import org.springframework.ai.rag.Query;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 import reactor.core.publisher.Flux;
@@ -33,8 +40,11 @@ import reactor.core.scheduler.Schedulers;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
+@Slf4j
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
@@ -45,11 +55,15 @@ public class ChatController {
 
     private final ConfigurablePromptTemplateFactory promptTemplateFactory;
 
+    private final VectorStoreService vectorStoreService;
+
     public ChatController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory,
-                          ConfigurablePromptTemplateFactory promptTemplateFactory) {
+                          ConfigurablePromptTemplateFactory promptTemplateFactory,
+                          VectorStoreService vectorStoreService) {
         this.aiModelFactory = aiModelFactory;
         this.aiModel = aiModelFactory.getModel(null);
         this.promptTemplateFactory = promptTemplateFactory;
+        this.vectorStoreService = vectorStoreService;
     }
 
     /**
@@ -310,9 +324,8 @@ public class ChatController {
      * @param question
      * @return
      */
-    @GetMapping(value = "/staticRagChat", produces =  MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> staticRagChat(@RequestParam(value = "question", defaultValue = "请告知文件概要信息") String question, HttpServletResponse response) {
-        response.setContentType("text/event-stream;charset=UTF-8");
+    @GetMapping(value = "/staticRagChat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<Flux<String>> staticRagChat(@RequestParam(value = "question", defaultValue = "请告知文件概要信息") String question) {
         Message systemMessage = new SystemPromptTemplate(ResourceUtils.getText("classpath:prompts/policy/system.st")).createMessage();
         Message userMessage = new SystemPromptTemplate(ResourceUtils.getText("classpath:prompts/policy/user.st"))
                 .createMessage(
@@ -327,17 +340,65 @@ public class ChatController {
                 .build();
         Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage), options);
 
-        return Flux.defer(() -> ((DashScopeChatModel) aiModel)
+        var flux =  Flux.defer(() -> ((DashScopeChatModel) aiModel)
                 .stream(prompt)
-                .map(chatResponse -> {
-                            if (chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null) {
-                                return chatResponse.getResult().getOutput().getText();
-                            } else {
-                                return "";
-                            }
-                        }
-                )
+                .filter(chatResponse -> chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
+                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
         ).subscribeOn(Schedulers.boundedElastic());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/event-stream;charset=UTF-8"))
+                .body(flux);
     }
+
+    /**
+     * 文件上传接口
+     * @param file 文件
+     * @param indexName 索引名称
+     * @return 上传结果
+     */
+    @PostMapping("/rag/uploadFile")
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
+                                             @RequestParam(value = "indexName", required = false, defaultValue = "local") String indexName) {
+        if (vectorStoreService.saveFileToVectorStore(file, indexName)) {
+            return ResponseEntity.ok().body("file uploaded to vector store");
+        }
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("file upload to vector store failed");
+    }
+
+    /**
+     * RAG聊天接口
+     * @param question 用户问题
+     * @return 回答内容
+     */
+    @GetMapping(value = "/rag/chat", produces =  MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<Flux<String>> ragChat(@RequestParam("question") String question,
+                                          @RequestParam(value = "indexName", required = false, defaultValue = "local") String indexName) {
+        var produces = MediaType.parseMediaType("text/event-stream;charset=UTF-8");
+        var retriever = vectorStoreService.createDocumentRetriever(indexName);
+        // 检查检索结果
+        List<Document> retrievedDocs = retriever.retrieve(Query.builder().text(question).build());
+
+        if (CollectionUtils.isEmpty(retrievedDocs)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(produces)
+                    .body(Flux.just("抱歉，我在知识库中没有找到与您问题相关的信息。"));
+        }
+
+        var chatClient = ChatClient.builder((ChatModel) aiModel)
+                .defaultAdvisors(new DocumentRetrievalAdvisor(retriever))
+                .build();
+
+        var content = chatClient.prompt()
+                .system(ResourceUtils.getText("classpath:prompts/policy/system.st"))
+                .user(question)
+                .stream()
+                .content();
+
+        return ResponseEntity.ok()
+                .contentType(produces)
+                .body(content);
+    }
+
 
 }
