@@ -388,11 +388,16 @@ public class ChatController {
                 .defaultAdvisors(new DocumentRetrievalAdvisor(retriever))
                 .build();
 
-        var content = chatClient.prompt()
-                .system(ResourceUtils.getText("classpath:prompts/policy/system.st"))
-                .user(question)
-                .stream()
-                .content();
+        var content = Flux.defer(() -> chatClient.prompt()
+                        .system(ResourceUtils.getText("classpath:prompts/policy/system.st"))
+                        .user(question)
+                        .stream()
+                        .content()
+                        // 等同content()，content()只是简化了map处理并有简单的非空过滤
+//                        .chatResponse()
+//                        .filter(chatResponse -> chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
+//                        .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+        ).subscribeOn(Schedulers.boundedElastic());
 
         return ResponseEntity.ok()
                 .contentType(produces)
