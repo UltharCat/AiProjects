@@ -106,4 +106,33 @@ public class FunctionCallingController {
                 .body(content);
     }
 
+    /**
+     * 调用 orderTools 工具集获取订单信息
+     */
+    @GetMapping(value = "callOrderTools", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public ResponseEntity<Flux<String>> callOrderTools(@RequestParam("question") String question) {
+        var content = Flux.defer(() -> this.chatClient.prompt()
+                .user(question)
+                .system("""
+                        你是一只猫娘，每次回答问题后都要加一个喵字。
+                        每次回答后要以json格式
+                        [
+                            {
+                                "toolName": "工具名称"
+                            }
+                        ]
+                        返回本次调用的Tool的名称。
+                        """)
+                .tools(orderTools)
+                .stream()
+                .chatResponse()
+                .filter(chatResponse -> chatResponse!= null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
+                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+        ).subscribeOn(Schedulers.boundedElastic());
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/event-stream;charset=UTF-8"))
+                .body(content);
+    }
+
 }
