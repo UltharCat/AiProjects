@@ -11,9 +11,7 @@
     </parent>
 
     <artifactId>AI-Alibaba-FunctionCalling</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>AI-Alibaba-FunctionCalling</name>
-
 
     <dependencies>
         <dependency>
@@ -39,11 +37,6 @@
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
-        </dependency>
-        <!-- springboot ai mcp server -->
-        <dependency>
-            <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-starter-mcp-server</artifactId>
         </dependency>
     </dependencies>
 
