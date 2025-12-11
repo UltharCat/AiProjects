@@ -51,7 +51,21 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <!-- springboot ai mcp server -->
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-mcp-server-webflux-spring-boot-starter</artifactId>
+        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.ai</groupId>-->
+<!--            <artifactId>spring-ai-starter-mcp-server-webflux</artifactId>-->
+<!--            <version>1.1.0-M4</version>-->
+<!--        </dependency>-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.ai</groupId>-->
+<!--            <artifactId>spring-ai-starter-mcp-client-webflux</artifactId>-->
+<!--            <version>1.1.0-M4</version>-->
+<!--        </dependency>-->
     </dependencies>
 
     <build>

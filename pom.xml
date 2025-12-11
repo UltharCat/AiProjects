@@ -14,6 +14,7 @@
         <module>AI-Alibaba-Model</module>
         <module>AI-Model</module>
         <module>AI-Alibaba-FunctionCalling</module>
+        <module>AI-Alibaba-MCP-Client</module>
     </modules>
 
     <packaging>pom</packaging>
