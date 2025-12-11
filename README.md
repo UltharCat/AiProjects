@@ -1,21 +1,43 @@
-# 项目记录
-1. AI-Alibaba-Model是一个停止的项目，原因在于Alibaba依赖对其公司的QWen模型支持都不到位。可以通过配置DashScope配置使用Qwen-Max，但对于多模态的Qwen-mini-turbo却不支持，无法支撑后续的多模态开发，不然就得在其他使用阶段切换模型。其次是DashScope类的Model集成内容太多，不喜欢使用。
+# AI-Projects
 
-# 思路记录
-1. AOT的作用和几个继承类的作用（或许可以作为提前进行config参数和自动装配类编译的选择），该处AOT源自几个AI相关jar包下均有的内容
-   1. AOT让类的静态初始化提前，但是不会让类实例化（静态初始化后是字段实例化、代码块实例化），提前配置类和自动装配类在编译期进行处理，减少了其在运行过程中初始化、实例化的反射调用（比如bean的注册中的反射调用）
-   2. AOT适用于POJO类，无静态代码块，或静态代码块中无I/O操作或其他bean依赖的情况
-   3. Spring-Aot作用于maven项目compile之后，进行aot生成会让运行中会使用到的诸如cglib代理类直接生成，不再动态生成，提高运行效率
-   4. SpringBoot3.2开始支持AOT，SpringBoot3.3开始默认启用AOT，可以自动打包项目中依赖的可以进行aot的类
-2. 同时发现ollama包和openai包下都存在api的调用类，其实之前的client类应该是可以被完全替代，并且之后的ImageModel和Audio调用也应该可以替代，只是需要考虑差异
-   1. 即便是spring-ai下的包，目前的1.0.0-M6的版本中，针对chat、image、audio的调用也并非完全统一，封装包始终是有差异的，如prompt的封装，spring-ai下的多模态调用虽然秉承使用model.call，但各自有各自的prompt封装类，且各自封装类使用各自的Message和options，用于功能适应，尽管这些封装类都继承子ModelRequest
-3. 可以内置一个sqlite的数据库，升级上下文缓存子项目的适配范围
-4. 虽然在controller中使用了类变量，但是没做到绑定用户，应该使用一个map进行chat参数类的关联，这个参数类包括integrationType、message（message主要预存user信息），key可以使用Token，再通过redis设置ttl
-5. 一直在思考，是否可以通过某种协议，将python的大模型应用和java的应用进行结合，毕竟目前大模型的生态还是在python这边比较完善
+这是一个用于探索和实践各种大语言模型（LLM）和AI技术的Java项目集合。项目基于Spring Boot和Maven，采用多模块架构，整合了包括Ollama、OpenAI以及阿里巴巴通义千问在内的多种模型，旨在探索聊天、函数调用、多模态交互等不同AI应用场景的实现。
 
-# 问题记录
-1. dashscope没有chatClient，之前的client错误，当前项目仅能通过Openai和ollama调用ChatClient
-   1. 其实使用的chatClient是通过spring-ai的ChatClient类使用各自模型的model构建的，并无错误
-   2. 但image和audio的调用却没有client类进行适配，导致需要直接使用各自的model类
-2. 语音识别下alibaba组件使用MultiModalConversation进行处置
-   1. alibaba依赖中的dashscope组件版本过低，无MultiModalConversation
+## 项目概述
+
+本项目是一个多模块的Spring Boot工程，用于试验各种大语言模型（LLMs）和AI技术。项目探索了与不同AI服务（如Ollama、OpenAI、Alibaba）的集成，并记录了在开发过程中关于技术选型、架构设计和问题解决的思考。
+
+## 模块说明
+
+- **AI-Alibaba-FunctionCalling**: 探索和实现基于阿里巴巴通义千问模型的函数调用功能，同时兼有MCP Server的功能。
+- **AI-Alibaba-MCP-Client**: 尝试构建多模态对话客户端，但因依赖库版本问题暂未完全实现。
+- **AI-Alibaba-Model**: （已停止）最初用于集成阿里巴巴QWen模型的模块。由于官方依赖对多模态模型支持不佳，已暂停开发。
+- **AI-ChatClient**: 一个通用的、与具体模型无关的聊天客户端模块。
+- **AI-Model**: 定义了项目中通用的模型实体和接口。
+- **AI-Ollama-Base**: 提供了与本地模型服务Ollama集成的基础功能。
+
+## 开发思路与技术探索
+
+1. **Spring AOT (Ahead-Of-Time Compilation)**
+    -   通过在编译期处理自动配置和生成代理类，AOT可以显著减少应用的启动时间和运行时开销。
+    -   适用于无复杂静态初始化（如I/O操作）的POJO类，能有效提升性能。
+    -   自SpringBoot 3.2起支持，并在3.3版本中默认启用。
+
+2. **统一AI模型调用**
+    -   尽管`spring-ai`项目致力于提供统一的API，但在当前版本（`1.0.0-M6`）中，针对聊天（Chat）、图像（Image）和音频（Audio）的调用封装仍存在差异。
+    -   不同模型的Prompt、Message和Options封装各不相同，开发者需要针对性地进行适配。
+
+3. **用户会话管理**
+    -   当前的Controller实现中缺少用户绑定。计划使用`Map`来关联用户会话（`Key`为Token），并结合Redis的TTL（Time-To-Live）机制来管理会话生命周期，确保多用户场景下的隔离性。
+
+4. **Java与Python生态结合**
+    -   鉴于Python在AI领域的生态系统更为成熟，正在思考如何通过某种协议（如gRPC或HTTP）将Python的AI应用与Java后端服务进行高效结合，以弥补Java生态的不足。
+
+## 已知问题与记录
+
+1.  **Alibaba DashScope依赖问题**
+    -   **模型支持不全**: `AI-Alibaba-Model`项目已停止，因为官方`DashScope`依赖对自家的Qwen系列模型支持不到位，特别是对多模态模型（如`qwen-vl-plus`）的支持缺失，导致无法进行完整的的多模态功能开发。
+    -   **组件缺失**: `DashScope`依赖版本过低，缺少`MultiModalConversation`等关键类，影响了语音识别等多模态功能的开发。
+
+2.  **Spring AI客户端封装不一致**
+    -   `spring-ai`为不同模型提供了统一的`ChatClient`抽象，但对于图像和音频功能，缺少类似的客户端封装，需要直接调用各自的`ImageModel`或`AudioModel`，增加了开发复杂性。
+
