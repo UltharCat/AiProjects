@@ -1,0 +1,59 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: AI-Alibaba-Model
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  datasource:
+    url: jdbc:postgresql://localhost:5432/springai
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+  ai:
+#    ollama:
+#      base-url: http://localhost:11434
+#      chat:
+#        options:
+#          model: gpt-oss:20b
+#    openai:
+#      api-key: ${DASHSCOPE_API_KEY}
+#      base-url: https://dashscope.aliyuncs.com/compatible-mode
+#      chat:
+#        options:
+#          model: qwen-omni-turbo
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+      embedding:
+        options:
+          # 维度数必须和向量存储配置的维度数一致，维度数越高，表示能力越强，但也会占用更多存储空间和计算资源
+          dimensions: 1024
+          model: text-embedding-v4
+    vectorstore:
+      pgvector:
+        # 索引类型，可选值：hnsw、ivfflat、ivfsq8等，具体支持的索引类型取决于所使用的向量数据库
+        index-type: hnsw
+        # 距离度量方式，可选值：l2、cosine、ip等，具体支持的距离度量方式取决于所使用的向量数据库
+        distance-type: cosine_distance
+        dimensions: 1024
+        initialize-schema: true
+x-project:
+  app:
+    chat:
+      memory:
+        type: redis # redis | in-memory | sqlite
+        namespace: "chat:memory:"
+        ttl: 24h
+      vector-store:
+        type: remote # local | remote

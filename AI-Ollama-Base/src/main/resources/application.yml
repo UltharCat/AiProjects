@@ -1,0 +1,13 @@
+server:
+  port: 8081
+spring:
+  application:
+    name: AI-Ollama-Base
+  ai:
+    ollama:
+      type: restTemplate
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: gpt-oss:20b
+

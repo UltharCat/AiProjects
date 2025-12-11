@@ -1,0 +1,31 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: AI-Alibaba-FunctionCalling
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/ai?useSSL=false&serverTimezone=UTC
+    username: mysql
+    password: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+logging:
+  level:
+    org.springframework.ai: DEBUG

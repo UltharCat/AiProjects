@@ -1,0 +1,35 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: AI-Model
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        options:
+          model: gpt-oss:20b
+    openai:
+#      api-key: ${GEMINI_API_KEY}
+      api-key: ${DASHSCOPE_API_KEY}
+#      base-url: https://generativelanguage.googleapis.com/v1beta/openai
+      base-url: https://dashscope.aliyuncs.com/compatible-mode
+      chat:
+        options:
+#          model: gemini-2.0-flash
+#          model: unsloth/Qwen2.5-Omni-7B-GGUF
+          model: qwen-omni-turbo
+
+x-project:
+  app:
+    chat:
+      memory:
+        type: redis # redis | in-memory | sqlite
+        namespace: "chat:memory:"
+        ttl: 24h
