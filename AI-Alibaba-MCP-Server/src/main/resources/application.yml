@@ -1,0 +1,19 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: AI-Alibaba-MCP-Server
+  ai:
+    mcp:
+      server:
+        name: spring-ai-mcp-server
+        protocol: STREAMABLE # SSE、STREAMABLE、STATELESS
+        version: 1.0.0
+        type: ASYNC  # Recommended for reactive applications
+        instructions: "This reactive server provides time information tools and resources"
+        request-timeout: 20s
+        streamable-http:
+          mcp-endpoint: /mcp
+          keep-alive-interval: 30s
+          disallow-delete: false

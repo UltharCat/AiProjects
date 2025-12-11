@@ -10,7 +10,6 @@
     </parent>
 
     <artifactId>AI-Alibaba-Model</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>AI-Alibaba-Model</name>
 
     <dependencies>
@@ -29,23 +28,16 @@
         <!--alibaba dashscope-->
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
-            <artifactId>spring-ai-alibaba-starter</artifactId>
-            <!-- 删除nacos依赖 -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-alibaba-nacos-config</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>
         <!-- pg-vector -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-pgvector-store-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-autoconfigure-vector-store-pgvector</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.ai</groupId>
+            <artifactId>spring-ai-pgvector-store</artifactId>
         </dependency>
         <!-- tika -->
         <dependency>

@@ -10,7 +10,6 @@
     </parent>
 
     <artifactId>AI-Ollama-Base</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
     <name>AI-Ollama-Base</name>
 
     <dependencies>

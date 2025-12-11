@@ -13,29 +13,22 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
         <!--alibaba dashscope-->
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
-            <artifactId>spring-ai-alibaba-starter</artifactId>
-            <!-- 删除nacos依赖 -->
-            <exclusions>
-                <exclusion>
-                    <groupId>com.alibaba.cloud</groupId>
-                    <artifactId>spring-alibaba-nacos-config</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.alibaba.nacos</groupId>
-                    <artifactId>*</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>
         <!-- springboot ai mcp client -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-mcp-client-webflux-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-mcp-client</artifactId>
         </dependency>
 
     </dependencies>

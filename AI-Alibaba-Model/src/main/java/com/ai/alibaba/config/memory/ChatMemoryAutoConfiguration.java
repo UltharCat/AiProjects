@@ -2,7 +2,8 @@ package com.ai.alibaba.config.memory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
+import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -25,7 +26,7 @@ public class ChatMemoryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ChatMemory.class)
     public ChatMemory inMemoryChatMemory() {
-        return new InMemoryChatMemory();
+        return MessageWindowChatMemory.builder().chatMemoryRepository(new InMemoryChatMemoryRepository()).build();
     }
 
 }

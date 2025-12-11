@@ -19,6 +19,19 @@ spring:
       chat:
         options:
           model: qwen-max
+    mcp:
+      server:
+        name: mcp-server
+        version: 1.0.0
+        protocol: streamable # SSE、STREAMABLE、STATELESS
+        type: ASYNC  # Recommended for reactive applications
+        instructions: "This server provides function calling capabilities for various tools and resources"
+        request-timeout: 60s
+        streamable-http:
+          keep-alive-interval: 30s
+          mcp-endpoint: /mcp
+          disallow-delete: false
+
   jpa:
     show-sql: true
     hibernate:
@@ -26,6 +39,7 @@ spring:
     properties:
       hibernate:
         format_sql: false
+    open-in-view: false
 logging:
   level:
     org.springframework.ai: DEBUG

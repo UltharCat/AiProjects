@@ -1,8 +1,8 @@
 package com.ai.alibaba.controller;
 
 import com.ai.alibaba.config.model.AiModelFactory;
-import com.alibaba.cloud.ai.dashscope.audio.DashScopeSpeechSynthesisModel;
-import com.alibaba.cloud.ai.dashscope.audio.synthesis.SpeechSynthesisPrompt;
+import org.springframework.ai.audio.tts.TextToSpeechModel;
+import org.springframework.ai.audio.tts.TextToSpeechPrompt;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -17,10 +17,10 @@ import java.nio.ByteBuffer;
 @RequestMapping("/audio/synthesis")
 public class AudioSynthesisController {
 
-    private final DashScopeSpeechSynthesisModel aiModel;
+    private final TextToSpeechModel aiModel;
 
     public AudioSynthesisController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory) {
-        this.aiModel = (DashScopeSpeechSynthesisModel) aiModelFactory.getModel("dashscope-audio-synthesis");
+        this.aiModel = (TextToSpeechModel) aiModelFactory.getModel("dashscope-audio-synthesis");
     }
 
     /**
@@ -30,8 +30,8 @@ public class AudioSynthesisController {
      */
     @GetMapping("/singleSynthesis")
     public ResponseEntity<byte[]> synthesis(@RequestParam("input") String input) {
-        SpeechSynthesisPrompt prompt = new SpeechSynthesisPrompt(input);
-        ByteBuffer audio = aiModel.call(prompt).getResult().getOutput().getAudio();
+        TextToSpeechPrompt prompt = new TextToSpeechPrompt(input);
+        ByteBuffer audio = ByteBuffer.wrap(aiModel.call(prompt).getResult().getOutput());
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header("Content-Disposition", "attachment; filename=\"synthesis.mp3\"")
                 .body(audio.array());

@@ -41,7 +41,7 @@ public class VectorStoreServiceImpl implements VectorStoreService {
     ) {
         this.context = context;
         this.type = type;
-        this.dashScopeApi = new DashScopeApi(dashScopeApiKey);
+        this.dashScopeApi = DashScopeApi.builder().apiKey(dashScopeApiKey).build();
     }
 
     /**

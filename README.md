@@ -10,10 +10,10 @@
 
 - **AI-Alibaba-FunctionCalling**: 探索和实现基于阿里巴巴通义千问模型的函数调用功能，同时兼有MCP Server的功能。
 - **AI-Alibaba-MCP-Client**: 尝试构建多模态对话客户端，但因依赖库版本问题暂未完全实现。
-- **AI-Alibaba-Model**: （已停止）最初用于集成阿里巴巴QWen模型的模块。由于官方依赖对多模态模型支持不佳，已暂停开发。
+- **AI-Alibaba-Model**: 用于阿里巴巴多模态模型学习的模块。
 - **AI-ChatClient**: 一个通用的、与具体模型无关的聊天客户端模块。
-- **AI-Model**: 定义了项目中通用的模型实体和接口。
-- **AI-Ollama-Base**: 提供了与本地模型服务Ollama集成的基础功能。
+- **AI-Model**: 试图兼容openai接口、ollma接口和dashscope接口，定义了项目中通用的模型实体和接口的模块。
+- **AI-Ollama-Base**: 提供了与本地模型服务Ollama集成的基础功能，使用restTemplate通过访问本地ollama接口进行间接模型访问。
 
 ## 开发思路与技术探索
 

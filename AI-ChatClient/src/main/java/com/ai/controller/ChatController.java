@@ -4,6 +4,7 @@ import com.ai.entity.Country;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +20,6 @@ import reactor.core.scheduler.Schedulers;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
-
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_CONVERSATION_ID_KEY;
-import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvisor.CHAT_MEMORY_RETRIEVE_SIZE_KEY;
 
 @RestController
 @RequestMapping("/chat")
@@ -206,8 +204,7 @@ public class ChatController {
                 )
                 .advisors(a->
                         a.params(Map.of(
-                                CHAT_MEMORY_CONVERSATION_ID_KEY, sessionId,
-                                CHAT_MEMORY_RETRIEVE_SIZE_KEY, 100
+                                ChatMemory.CONVERSATION_ID, sessionId
                         ))
                 )
                 .stream()

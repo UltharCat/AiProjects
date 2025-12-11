@@ -2,11 +2,11 @@ package com.ai.alibaba.config.memory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.common.lang.NonNullApi;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.data.redis.connection.ReturnType;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.util.CollectionUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -20,6 +20,7 @@ import java.util.List;
  * - Lua 原子追加 + 可选裁剪 + 续 TTL
  * - 无本地二级缓存（减少依赖 & 复杂度）
  */
+@NonNullApi
 public record RedisChatMemory(StringRedisTemplate redis, ObjectMapper mapper, Duration ttl, String namespace,
                               int maxMessages) implements ChatMemory {
 
@@ -47,7 +48,6 @@ public record RedisChatMemory(StringRedisTemplate redis, ObjectMapper mapper, Du
 
     @Override
     public void add(String conversationId, List<Message> messages) {
-        if (CollectionUtils.isEmpty(messages)) return;
         String key = buildKey(conversationId);
 
         List<String> argv = new ArrayList<>(messages.size() + 2);
@@ -76,7 +76,6 @@ public record RedisChatMemory(StringRedisTemplate redis, ObjectMapper mapper, Du
         }, true);
     }
 
-    @Override
     public List<Message> get(String conversationId, int lastN) {
         String key = buildKey(conversationId);
         long start;
@@ -97,6 +96,11 @@ public record RedisChatMemory(StringRedisTemplate redis, ObjectMapper mapper, Du
             }
         }
         return result;
+    }
+
+    @Override
+    public List<Message> get(String conversationId) {
+        return get(conversationId, 0);
     }
 
     @Override

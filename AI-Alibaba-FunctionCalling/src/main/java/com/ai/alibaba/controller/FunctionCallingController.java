@@ -16,6 +16,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/functionCalling")
@@ -41,9 +42,9 @@ public class FunctionCallingController {
     }
 
     /**
-     * 调用 orderFunction 函数获取所有订单信息
+     * 调用 orderFunction 函数获取所有订单信息（spring-ai 1.1.0版本删除functions）
      */
-    @GetMapping(value = "callOrderFunction", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+/*    @GetMapping(value = "callOrderFunction", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> callOrderFunction(@RequestParam("question") String question) {
         var content = Flux.defer(() -> this.chatClient.prompt()
                 .user(question)
@@ -60,7 +61,7 @@ public class FunctionCallingController {
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("text/event-stream;charset=UTF-8"))
                 .body(content);
-    }
+    }*/
 
     /**
      * 调用 getOrderById 函数获取指定订单信息
@@ -75,8 +76,8 @@ public class FunctionCallingController {
                 .tools(orderTools)
                 .stream()
                 .chatResponse()
-                .filter(chatResponse -> chatResponse!= null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
-                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+                .filter(Objects::nonNull)
+                .mapNotNull(chatResponse -> chatResponse.getResult().getOutput().getText())
         ).subscribeOn(Schedulers.boundedElastic());
 
         return ResponseEntity.ok()
@@ -97,8 +98,8 @@ public class FunctionCallingController {
                 .tools(orderTools)
                 .stream()
                 .chatResponse()
-                .filter(chatResponse -> chatResponse!= null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
-                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+                .filter(Objects::nonNull)
+                .mapNotNull(chatResponse -> chatResponse.getResult().getOutput().getText())
         ).subscribeOn(Schedulers.boundedElastic());
 
         return ResponseEntity.ok()
@@ -126,8 +127,8 @@ public class FunctionCallingController {
                 .tools(orderTools)
                 .stream()
                 .chatResponse()
-                .filter(chatResponse -> chatResponse!= null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
-                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+                .filter(Objects::nonNull)
+                .mapNotNull(chatResponse -> chatResponse.getResult().getOutput().getText())
         ).subscribeOn(Schedulers.boundedElastic());
 
         return ResponseEntity.ok()

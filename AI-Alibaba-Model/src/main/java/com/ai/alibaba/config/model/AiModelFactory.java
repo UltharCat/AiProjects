@@ -15,8 +15,6 @@ public record AiModelFactory(Map<String, Model<?, ?>> allModels) {
             case "dashscope-image" -> allModels.get("dashScopeImageModel");
             case "dashscope-audio-transcription" -> allModels.get("dashScopeAudioTranscriptionModel");
             case "dashscope-audio-synthesis" -> allModels.get("dashScopeSpeechSynthesisModel");
-            case "ollama-chat" -> allModels.get("ollamaChatModel");
-            case "openai-chat" -> allModels.get("openaiChatModel");
             default -> allModels.get("dashscopeChatModel");
         };
     }

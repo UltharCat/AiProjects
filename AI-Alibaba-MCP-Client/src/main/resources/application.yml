@@ -4,10 +4,6 @@ server:
 spring:
   application:
     name: AI-Alibaba-MCP-Client
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 100MB
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
@@ -15,6 +11,15 @@ spring:
         options:
           model: qwen-max
 
-logging:
-  level:
-    org.springframework.ai: DEBUG
+    mcp:
+      client:
+        enabled: true
+        name: spring-ai-mcp-client
+        version: 1.0.0
+        request-timeout: 600s
+        type: ASYNC  # or ASYNC for reactive applications
+        streamable-http:
+          connections:
+            server1:
+              url: http://localhost:18081
+              endpoint: /mcp

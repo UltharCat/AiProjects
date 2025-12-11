@@ -5,7 +5,7 @@ import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.model.Model;
 import org.springframework.ai.ollama.OllamaChatModel;
-import org.springframework.ai.ollama.api.OllamaOptions;
+import org.springframework.ai.ollama.api.OllamaChatOptions;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -59,7 +59,7 @@ public class ChatController {
             Prompt prompt = new Prompt(input, options);
             call = ((OpenAiChatModel) aiModel).call(prompt);
         } else {
-            OllamaOptions options = OllamaOptions.builder().build();
+            OllamaChatOptions options = OllamaChatOptions.builder().build();
             Prompt prompt = new Prompt(input, options);
             call = ((OllamaChatModel) aiModel).call(prompt);
         }

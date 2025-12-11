@@ -1,8 +1,8 @@
 package com.ai.alibaba.controller;
 
 import com.ai.alibaba.config.model.AiModelFactory;
-import com.alibaba.cloud.ai.dashscope.audio.DashScopeAudioTranscriptionModel;
 import com.alibaba.cloud.ai.dashscope.audio.DashScopeAudioTranscriptionOptions;
+import com.alibaba.cloud.ai.dashscope.audio.transcription.AudioTranscriptionModel;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
@@ -15,10 +15,10 @@ import java.net.MalformedURLException;
 @RequestMapping("/audio/transcription")
 public class AudioTranscriptionController {
 
-    private final DashScopeAudioTranscriptionModel aiModel;
+    private final AudioTranscriptionModel aiModel;
 
     public AudioTranscriptionController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory) {
-        this.aiModel = (DashScopeAudioTranscriptionModel) aiModelFactory.getModel("dashscope-audio-transcription");
+        this.aiModel = (AudioTranscriptionModel) aiModelFactory.getModel("dashscope-audio-transcription");
     }
 
     /**
@@ -29,7 +29,7 @@ public class AudioTranscriptionController {
     public String transcription() throws MalformedURLException {
         Resource resource = new UrlResource("https://dashscope.oss-cn-beijing.aliyuncs.com/samples/audio/paraformer/hello_world_female.wav");
         DashScopeAudioTranscriptionOptions options = DashScopeAudioTranscriptionOptions.builder()
-                .withModel("sensevoice-v1")
+                .model("sensevoice-v1")
                 .build();
 
         AudioTranscriptionPrompt prompt = new AudioTranscriptionPrompt(resource, options);

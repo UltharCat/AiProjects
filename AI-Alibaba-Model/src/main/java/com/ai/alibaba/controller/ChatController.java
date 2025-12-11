@@ -6,13 +6,13 @@ import com.ai.alibaba.service.VectorStoreService;
 import com.alibaba.cloud.ai.advisor.DocumentRetrievalAdvisor;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatModel;
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
-import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
-import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
+//import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplate;
+//import com.alibaba.cloud.ai.prompt.ConfigurablePromptTemplateFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
-import org.springframework.ai.ResourceUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
@@ -25,6 +25,7 @@ import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.model.Model;
 import org.springframework.ai.rag.Query;
+import org.springframework.ai.util.ResourceUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpStatus;
@@ -39,9 +40,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 @RestController
@@ -52,16 +51,16 @@ public class ChatController {
 
     private Model<?, ?> aiModel;
 
-    private final ConfigurablePromptTemplateFactory promptTemplateFactory;
+    //private final ConfigurablePromptTemplateFactory promptTemplateFactory;
 
     private final VectorStoreService vectorStoreService;
 
     public ChatController(@Qualifier("aiModelFactory") AiModelFactory aiModelFactory,
-                          ConfigurablePromptTemplateFactory promptTemplateFactory,
+                          //ConfigurablePromptTemplateFactory promptTemplateFactory,
                           VectorStoreService vectorStoreService) {
         this.aiModelFactory = aiModelFactory;
         this.aiModel = aiModelFactory.getModel(null);
-        this.promptTemplateFactory = promptTemplateFactory;
+        //this.promptTemplateFactory = promptTemplateFactory;
         this.vectorStoreService = vectorStoreService;
     }
 
@@ -82,7 +81,7 @@ public class ChatController {
     @GetMapping("/singleChat")
     public String chat(@RequestParam("input") String input) {
         DashScopeChatOptions options = DashScopeChatOptions.builder()
-                .withMaxToken(1500)
+                .maxToken(1500)
                 .build();
         Prompt prompt = new Prompt(input, options);
         ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
@@ -99,11 +98,11 @@ public class ChatController {
         String promptInput = instruction + "\n\n用户输入: " + input;
 
         DashScopeChatOptions options = DashScopeChatOptions.builder()
-                .withMaxToken(1500)
+                .maxToken(1500)
                 .build();
         Prompt prompt = new Prompt(promptInput, options);
         ChatResponse call = ((DashScopeChatModel) aiModel).call(prompt);
-        String text = call.getResult().getOutput().getText();
+        String text = Optional.ofNullable(call.getResult().getOutput().getText()).orElse(Strings.EMPTY);
 
         var converter = new BeanOutputConverter<>(new ParameterizedTypeReference<Country>() {});
 
@@ -164,18 +163,12 @@ public class ChatController {
         Prompt prompt = new Prompt(input, options);
         // 通过Flux.defer延迟执行，无defer的情况下会在程序初始化时就创建flux发布者，导致后续的flux订阅始终面向一个发布者，defer的作用有两点：1.延迟加载 2.每次请求订阅时创建新的发布者
         return Flux.defer(() -> ((DashScopeChatModel) aiModel)
-                // 获取flux流式响应（Flux的stream是动态推送处置的，对比的collection的stream则是静态的集合数据遍历处理）
-                .stream(prompt)
-                //.publishOn(Schedulers.boundedElastic())
-                // 处理流式响应内容，提取文本
-                .map(chatResponse -> {
-                        if (chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null) {
-                            return chatResponse.getResult().getOutput().getText();
-                        } else {
-                            return "";
-                        }
-                    }
-                )
+                        // 获取flux流式响应（Flux的stream是动态推送处置的，对比的collection的stream则是静态的集合数据遍历处理）
+                        .stream(prompt)
+                        //.publishOn(Schedulers.boundedElastic())
+                        // 处理流式响应内容，提取文本
+                        .filter(Objects::nonNull)
+                        .mapNotNull(chatResponse -> chatResponse.getResult().getOutput().getText())
         )
         // 将上游处理切换到弹性线程池中异步执行
         // 包括defer延迟执行和后续supplier发布者的创建，如果subscribeOn在supplier实现内部，则只是将supplier的实现放在了弹性线程池中，不过区别不大，且如果在内部，也会有stream()可能已有线程，无法切换的问题
@@ -198,7 +191,7 @@ public class ChatController {
                         .publishOn(Schedulers.boundedElastic())
                         .doOnNext(chunk -> {
                             try {
-                                byte[] bytes = chunk.getResult().getOutput().getText().getBytes(StandardCharsets.UTF_8);
+                                byte[] bytes = Objects.requireNonNull(chunk.getResult().getOutput().getText()).getBytes(StandardCharsets.UTF_8);
                                 // I/O阻塞操作
                                 outputStream.write(bytes);
                                 outputStream.flush();
@@ -263,26 +256,23 @@ public class ChatController {
 //    }
 
     /**
-     * 通过模板配置工厂基于配置化模板快捷构造userMessage的对话
-     * @param input
-     * @return
+     * 通过模板配置工厂基于配置化模板快捷构造userMessage的对话（alibaba example项目中不使用alibaba-starter，而是使用starter-dashscope，而这个依赖下无模板工厂）
      */
-    @GetMapping("/promptTemplateFactoryChat")
+/*    @GetMapping("/promptTemplateFactoryChat")
     public AssistantMessage promptTemplateFactoryChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
+
         ConfigurablePromptTemplate template = promptTemplateFactory.getTemplate("test-template");
         if (template == null) {
             template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况");
-//            template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况", Map.of("city", input));
+            //template = promptTemplateFactory.create("test-template", "你是一个天气预报员，用户询问你{city}天气，请回答用户明天的天气情况", Map.of("city", input));
         }
         Prompt prompt = template.create(Map.of("city", input));
 
         return ((DashScopeChatModel) aiModel).call(prompt).getResult().getOutput();
-    }
+    }*/
 
     /**
      * 通过模板配置文件快捷构造userMessage的对话
-     * @param input
-     * @return
      */
     @GetMapping("/promptTemplateChat")
     public AssistantMessage promptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
@@ -301,8 +291,6 @@ public class ChatController {
 
     /**
      * 模板构造systemMessage的对话
-     * @param input
-     * @return
      */
     @GetMapping("/sysPromptTemplateChat")
     public AssistantMessage sysPromptTemplateChat(@RequestParam(value = "input", defaultValue = "温州") String input) {
@@ -320,8 +308,6 @@ public class ChatController {
 
     /**
      * 静态RAG聊天示例
-     * @param question
-     * @return
      */
     @GetMapping(value = "/staticRagChat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public ResponseEntity<Flux<String>> staticRagChat(@RequestParam(value = "question", defaultValue = "请告知文件概要信息") String question) {
@@ -333,16 +319,16 @@ public class ChatController {
                 ));
         DashScopeChatOptions options = DashScopeChatOptions.builder()
                 // temperature越低越倾向RAG，多样性低
-                .withTemperature(0.5)
+                .temperature(0.5)
                 // TopP选择token采样范围，越大生成内容的采样范围越大，随机性越大
-                .withTopP(0.9)
+                .topP(0.9)
                 .build();
         Prompt prompt = new Prompt(Arrays.asList(systemMessage, userMessage), options);
 
         var flux =  Flux.defer(() -> ((DashScopeChatModel) aiModel)
                 .stream(prompt)
-                .filter(chatResponse -> chatResponse != null && chatResponse.getResult() != null && chatResponse.getResult().getOutput() != null)
-                .map(chatResponse -> chatResponse.getResult().getOutput().getText())
+                .filter(Objects::nonNull)
+                .mapNotNull(chatResponse -> chatResponse.getResult().getOutput().getText())
         ).subscribeOn(Schedulers.boundedElastic());
 
         return ResponseEntity.ok()

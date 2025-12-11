@@ -29,17 +29,17 @@
         <!--ollama-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-ollama-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-ollama</artifactId>
         </dependency>
         <!--openAI-->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-openai-spring-boot-starter</artifactId>
+            <artifactId>spring-ai-starter-model-openai</artifactId>
         </dependency>
         <!--alibaba dashscope-->
         <!--<dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
-            <artifactId>spring-ai-alibaba-starter</artifactId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>-->
     </dependencies>
 
