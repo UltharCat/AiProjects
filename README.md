@@ -36,7 +36,6 @@
 
 1.  **Alibaba DashScope依赖问题**
     -   **模型支持不全**: `AI-Alibaba-Model`项目已停止，因为官方`DashScope`依赖对自家的Qwen系列模型支持不到位，特别是对多模态模型（如`qwen-vl-plus`）的支持缺失，导致无法进行完整的的多模态功能开发。
-    -   **组件缺失**: `DashScope`依赖版本过低，缺少`MultiModalConversation`等关键类，影响了语音识别等多模态功能的开发。
 
 2.  **Spring AI客户端封装不一致**
     -   `spring-ai`为不同模型提供了统一的`ChatClient`抽象，但对于图像和音频功能，缺少类似的客户端封装，需要直接调用各自的`ImageModel`或`AudioModel`，增加了开发复杂性。
