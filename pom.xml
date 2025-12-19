@@ -23,6 +23,7 @@
         <module>AI-Alibaba-FunctionCalling</module>
         <module>AI-Alibaba-MCP-Client</module>
         <module>AI-Alibaba-MCP-Server</module>
+        <module>AI-Alibaba-Graph</module>
     </modules>
 
     <packaging>pom</packaging>

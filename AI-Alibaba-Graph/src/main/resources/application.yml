@@ -1,0 +1,20 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: AI-Alibaba-Graph
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
