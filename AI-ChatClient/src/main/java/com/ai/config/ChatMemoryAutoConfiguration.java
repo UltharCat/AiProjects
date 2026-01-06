@@ -27,8 +27,8 @@ public class ChatMemoryAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(ChatMemory.class)
     public ChatMemory inMemoryChatMemory() {
-        return MessageWindowChatMemory.builder()
-                .chatMemoryRepository(new InMemoryChatMemoryRepository()).build();
+        // 默认使用InMemoryChatMemory
+        return MessageWindowChatMemory.builder().build();
     }
 
 }
