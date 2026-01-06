@@ -2,6 +2,8 @@ package com.ai.alibaba.controller;
 
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.OverAllState;
+import com.alibaba.cloud.ai.graph.RunnableConfig;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +23,13 @@ public class GraphController {
     private final CompiledGraph quickStartGraph;
 
     private final CompiledGraph sentenceCreateGraph;
+    private final HttpServletRequest httpServletRequest;
 
     public GraphController(@Qualifier("quickStartGraph") CompiledGraph quickStartGraph,
-                           @Qualifier("sentenceCreateGraph") CompiledGraph sentenceCreateGraph) {
+                           @Qualifier("sentenceCreateGraph") CompiledGraph sentenceCreateGraph, HttpServletRequest httpServletRequest) {
         this.quickStartGraph = quickStartGraph;
         this.sentenceCreateGraph = sentenceCreateGraph;
+        this.httpServletRequest = httpServletRequest;
     }
 
     @GetMapping("/quickStartGraph")
@@ -38,7 +42,10 @@ public class GraphController {
     @GetMapping("/sentenceCreateGraph")
     public ResponseEntity<Map<String, Object>> sentenceCreateGraph(@RequestParam("handle") String handle) {
         return ResponseEntity.ok(
-                sentenceCreateGraph.invoke(Map.of("handle", handle))
+                sentenceCreateGraph.invoke(Map.of("handle", handle),
+                                RunnableConfig.builder()
+                                .threadId(httpServletRequest.getRequestedSessionId())
+                                .build())
                         .map(OverAllState::data)
                         .orElseGet(HashMap::new)
         );
