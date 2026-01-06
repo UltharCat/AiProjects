@@ -7,42 +7,35 @@ import com.alibaba.fastjson.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
-import org.springframework.util.Assert;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
-public class GenerateSentenceNode implements NodeAction {
+public class OptimizeSentenceNode implements NodeAction {
 
     private final ChatClient chatClient;
 
-    public GenerateSentenceNode(ChatClient.Builder builder) {
+    public OptimizeSentenceNode(ChatClient.Builder builder) {
         this.chatClient = builder.build();
     }
 
     @Override
     public Map<String, Object> apply(OverAllState state) throws Exception {
-        log.info("GenerateSentenceNode State {}", state);
-        // 获取state内参数
-        String handle = state.value("handle", "");
-        // 调用chatClient生成句子
+        log.info("OptimizeSentenceNode State {}", state);
+        // 调用chatClient进行优化
         PromptTemplate template = PromptTemplate.builder()
                 .template("""
-                        你是一个造句专家，且要根据侘寂风造句，要根据用户提供的关键词，按照关键词的语种进行相对应语种的造句，
+                        你是一个造句优化专家，用户提供句子和积极性评分，请根据评分对句子进行优化，降低句子的积极性，
                         并且最终只返回一个 map/json 格式，包含两个字段：sentence（字符串）和 positiveScore（整数，范围0到10），评分只返回整数数值，不返回其它解释。
-                        请根据以下关键词造句：{handle}。
+                        请根据以下句子进行优化：{sentence}，当前积极性评分为：{positiveScore}。
                         """)
                 .build();
-        String prompt = template.render(Map.of("handle", handle));
-
+        String prompt = template.render(state.data());
         String content = chatClient.prompt()
                 .user(prompt)
                 .call()
                 .content();
-
-        Assert.notNull(content,"chatClient generate returned null content");
-        return JSON.parseObject(content, new TypeReference<>() {});
+        return JSON.parseObject(content, new TypeReference<>(){});
     }
 
 }

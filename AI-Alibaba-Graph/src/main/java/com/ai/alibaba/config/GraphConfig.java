@@ -1,10 +1,12 @@
 package com.ai.alibaba.config;
 
 import com.ai.alibaba.node.GenerateSentenceNode;
+import com.ai.alibaba.node.OptimizeSentenceNode;
 import com.ai.alibaba.node.SentenceAudioSynthesisNode;
 import com.ai.alibaba.node.TranslateSentenceNode;
 import com.alibaba.cloud.ai.graph.CompiledGraph;
 import com.alibaba.cloud.ai.graph.StateGraph;
+import com.alibaba.cloud.ai.graph.action.AsyncEdgeAction;
 import com.alibaba.cloud.ai.graph.action.AsyncNodeAction;
 import com.alibaba.cloud.ai.graph.state.strategy.AppendStrategy;
 import com.alibaba.cloud.ai.graph.state.strategy.MergeStrategy;
@@ -57,12 +59,22 @@ public class GraphConfig {
                 () -> Map.of("handle", new ReplaceStrategy()));
         // 定义节点
         stateGraph.addNode("generateSentenceNode", AsyncNodeAction.node_async(new GenerateSentenceNode(builder)));
+        stateGraph.addNode("optimizeSentenceNode", AsyncNodeAction.node_async(new OptimizeSentenceNode(builder)));
         stateGraph.addNode("translateSentenceNode", AsyncNodeAction.node_async(new TranslateSentenceNode(builder)));
         stateGraph.addNode("sentenceAudioSynthesisNode", AsyncNodeAction.node_async(new SentenceAudioSynthesisNode(speechSynthesisModel)));
 
         // 定义边
         stateGraph.addEdge(StateGraph.START, "generateSentenceNode");
-        stateGraph.addEdge("generateSentenceNode", "translateSentenceNode");
+        stateGraph.addConditionalEdges("generateSentenceNode", AsyncEdgeAction.edge_async(state -> {
+            int positiveScore = state.value("positiveScore", 0);
+            return positiveScore > 5 ? "optimize": "continue";
+        }), Map.of("optimize", "optimizeSentenceNode",
+                "continue", "translateSentenceNode"));
+        stateGraph.addConditionalEdges("optimizeSentenceNode", AsyncEdgeAction.edge_async(state -> {
+            int positiveScore = state.value("positiveScore", 0);
+            return positiveScore > 5 ? "optimize": "continue";
+        }), Map.of("optimize", "optimizeSentenceNode",
+                "continue", "translateSentenceNode"));
         stateGraph.addEdge("translateSentenceNode", "sentenceAudioSynthesisNode");
         stateGraph.addEdge("sentenceAudioSynthesisNode", StateGraph.END);
 
