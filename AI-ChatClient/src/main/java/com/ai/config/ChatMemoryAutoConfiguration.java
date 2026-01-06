@@ -3,7 +3,6 @@ package com.ai.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ai.config.memory.RedisChatMemory;
 import org.springframework.ai.chat.memory.ChatMemory;
-import org.springframework.ai.chat.memory.InMemoryChatMemoryRepository;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
