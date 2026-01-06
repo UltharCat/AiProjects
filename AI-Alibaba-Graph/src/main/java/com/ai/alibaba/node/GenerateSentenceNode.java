@@ -10,7 +10,6 @@ import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.util.Assert;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Slf4j
 public class GenerateSentenceNode implements NodeAction {

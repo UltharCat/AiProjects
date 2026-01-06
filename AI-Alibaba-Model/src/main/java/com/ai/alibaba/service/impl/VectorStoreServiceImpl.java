@@ -106,7 +106,7 @@ public class VectorStoreServiceImpl implements VectorStoreService {
     public DocumentRetriever createDocumentRetriever(String indexName) {
         if (StringUtils.isNotBlank(indexName) && "remote".equals(type)) {
             return new DashScopeDocumentRetriever(dashScopeApi,
-                    DashScopeDocumentRetrieverOptions.builder().withIndexName(indexName).build());
+                    DashScopeDocumentRetrieverOptions.builder().indexName(indexName).build());
         } else {
             return VectorStoreDocumentRetriever.builder()
                     .vectorStore(this.getVectorStore(indexName))

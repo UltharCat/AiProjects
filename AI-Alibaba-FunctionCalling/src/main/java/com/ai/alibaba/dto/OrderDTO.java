@@ -2,7 +2,6 @@ package com.ai.alibaba.dto;
 
 import com.ai.alibaba.entity.TCustomer;
 import com.ai.alibaba.entity.TOrder;
-import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
