@@ -14,7 +14,6 @@ spring:
     driver-class-name: org.postgresql.Driver
     druid:
       pgvector:
-        type: com.alibaba.druid.pool.DruidDataSource
         driver-class-name: org.postgresql.Driver
         url: jdbc:postgresql://localhost:5432/agent
         username: postgres
@@ -49,7 +48,7 @@ spring:
         timeout: 5000
     mcp:
       client:
-        enabled: true
+        enabled: false
         name: agent-customer-service-mcp-client
         version: 1.0.0
         request-timeout: 600s

@@ -8,6 +8,14 @@ spring:
     username: mysql
     password: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
+    druid:
+      mysql:
+        url: jdbc:mysql://localhost:3306/ai?serverTimezone=UTC
+        username: mysql
+        password: mysql
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        initial-size: 1
+        max-active: 10
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
