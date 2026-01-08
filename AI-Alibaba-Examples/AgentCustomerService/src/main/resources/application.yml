@@ -1,0 +1,68 @@
+server:
+  port: 18081
+spring:
+  application:
+    name: AgentCustomerService
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+  datasource:
+    druid:
+      pgvector:
+        type: com.alibaba.druid.pool.DruidDataSource
+        url: jdbc:postgresql://localhost:5432/agent
+        username: postgres
+        password: postgres
+        driver-class-name: org.postgresql.Driver
+        initial-size: 1
+        max-active: 10
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+      embedding:
+        options:
+          # 维度数必须和向量存储配置的维度数一致，维度数越高，表示能力越强，但也会占用更多存储空间和计算资源
+          dimensions: 1024
+          model: text-embedding-v4
+    vectorstore:
+      pgvector:
+        # 索引类型，可选值：hnsw、ivfflat、ivfsq8等，具体支持的索引类型取决于所使用的向量数据库
+        index-type: hnsw
+        # 距离度量方式，可选值：l2、cosine、ip等，具体支持的距离度量方式取决于所使用的向量数据库
+        distance-type: cosine_distance
+        # 向量维度，需要和embedding模型输出维度一致
+        dimensions: 1024
+        initialize-schema: true
+    memory:
+      redis:
+        host: localhost
+        port: 6379
+        password:
+        timeout: 5000
+    mcp:
+      client:
+        enabled: true
+        name: agent-customer-service-mcp-client
+        version: 1.0.0
+        request-timeout: 600s
+        type: ASYNC  # or ASYNC for reactive applications
+        streamable-http:
+          connections:
+            server1:
+              url: http://localhost:18082
+              endpoint: /mcp
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: false
+    open-in-view: false
+logging:
+  level:
+    org.springframework.ai: DEBUG
