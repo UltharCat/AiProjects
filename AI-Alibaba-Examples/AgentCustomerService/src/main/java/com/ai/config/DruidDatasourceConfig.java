@@ -1,12 +1,13 @@
 package com.ai.config;
 
-import com.alibaba.druid.pool.DruidDataSource;
+import com.alibaba.druid.spring.boot3.autoconfigure.DruidDataSourceBuilder;
 import org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreProperties;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -15,10 +16,11 @@ import javax.sql.DataSource;
 @EnableConfigurationProperties(PgVectorStoreProperties.class)
 public class DruidDatasourceConfig {
 
+    @Primary
     @Bean
-    @ConfigurationProperties(prefix = "spring.datasource.pgvector")
+    @ConfigurationProperties(prefix = "spring.datasource.druid.pgvector")
     public DataSource pgDataSource() {
-        return new DruidDataSource();
+        return DruidDataSourceBuilder.create().build();
     }
 
     @Bean

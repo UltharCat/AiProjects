@@ -8,13 +8,17 @@ spring:
       max-file-size: 10MB
       max-request-size: 100MB
   datasource:
+    url: jdbc:postgresql://localhost:5432/agent
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
     druid:
       pgvector:
         type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: org.postgresql.Driver
         url: jdbc:postgresql://localhost:5432/agent
         username: postgres
         password: postgres
-        driver-class-name: org.postgresql.Driver
         initial-size: 1
         max-active: 10
   ai:
@@ -55,14 +59,6 @@ spring:
             server1:
               url: http://localhost:18082
               endpoint: /mcp
-  jpa:
-    show-sql: true
-    hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        format_sql: false
-    open-in-view: false
 logging:
   level:
     org.springframework.ai: DEBUG
