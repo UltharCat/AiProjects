@@ -13,7 +13,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableConfigurationProperties(PgVectorStoreProperties.class)
-public class DruidDatasourceConfig {
+public class PgDataSourceConfig {
 
     @Bean
     @ConfigurationProperties(prefix = "spring.datasource.druid.pgvector")
