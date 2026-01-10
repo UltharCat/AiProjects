@@ -1,5 +1,6 @@
 package com.ai.service.impl;
 
+import com.ai.request.AgentChatRequest;
 import com.ai.service.AgentService;
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
@@ -78,11 +79,11 @@ public class AgentServiceImpl implements AgentService {
     }
 
     @Override
-    public Flux<String> chat(String threadId, String userContent) {
+    public Flux<String> chat(AgentChatRequest request) {
         return Flux.defer(() -> chatClient.prompt()
                 .system(s -> s.param("current_date", LocalDate.now().toString()))
-                .user(userContent)
-                .advisors(a -> a.param(CONVERSATION_ID, threadId))
+                .user(request.getContent())
+                .advisors(a -> a.param(CONVERSATION_ID, request.getConversationId()))
                 .stream()
                 .chatResponse()
                 .filter(Objects::nonNull)

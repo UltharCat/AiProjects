@@ -2,6 +2,7 @@ package com.ai.domain.mysql.order;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import opennlp.tools.util.StringUtil;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
@@ -62,5 +63,11 @@ public class TOrder {
     @ColumnDefault("'PENDING'")
     @Column(name = "status", nullable = false, length = 50)
     private String status;
+
+    @PrePersist
+    public void prePersist() {
+        if (orderDate == null) orderDate = Instant.now();
+        if (StringUtil.isEmpty(status)) status = "PENDING";
+    }
 
 }

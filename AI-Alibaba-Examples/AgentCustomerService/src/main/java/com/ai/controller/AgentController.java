@@ -1,11 +1,10 @@
 package com.ai.controller;
 
+import com.ai.request.AgentChatRequest;
 import com.ai.service.AgentService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 @Slf4j
@@ -21,13 +20,12 @@ public class AgentController {
 
     /**
      * 智能客服对话
-     * @param question
-     * @param conversationId
+     * @param request
      * @return
      */
-    @GetMapping("/chat")
-    public Flux<String> chat(@RequestParam("question") String question, @RequestParam("conversationId") String conversationId) {
-        return agentService.chat(conversationId, question);
+    @PostMapping("/chat")
+    public Flux<String> chat(@RequestBody @Valid AgentChatRequest request) {
+        return agentService.chat(request);
     }
 
 }

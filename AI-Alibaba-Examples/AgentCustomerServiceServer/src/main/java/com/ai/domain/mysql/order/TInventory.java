@@ -45,4 +45,9 @@ public class TInventory {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    @PrePersist
+    public void prePersist() {
+        if (quantity == null) quantity = 0;
+    }
+
 }

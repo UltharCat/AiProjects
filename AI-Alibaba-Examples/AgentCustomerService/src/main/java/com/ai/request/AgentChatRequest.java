@@ -1,0 +1,28 @@
+package com.ai.request;
+
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
+
+
+@Data
+public class AgentChatRequest {
+
+    /**
+     * 用户对话id
+     */
+    @NotBlank(message = "用户对话id不能为空")
+    private String conversationId;
+
+    /**
+     * 用户输入内容
+     */
+    @NotBlank(message = "用户输入内容不能为空")
+    private String content;
+
+    /**
+     * rag文件
+     */
+    private MultipartFile file;
+
+}

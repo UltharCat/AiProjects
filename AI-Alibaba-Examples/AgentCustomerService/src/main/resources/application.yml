@@ -8,10 +8,10 @@ spring:
       max-file-size: 10MB
       max-request-size: 100MB
   datasource:
-    url: jdbc:postgresql://localhost:5432/agent
-    username: postgres
-    password: postgres
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:mysql://localhost:3306/ai?serverTimezone=UTC
+    username: mysql
+    password: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
       pgvector:
         driver-class-name: org.postgresql.Driver

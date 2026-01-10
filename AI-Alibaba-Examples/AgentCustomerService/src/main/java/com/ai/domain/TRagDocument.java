@@ -1,0 +1,58 @@
+package com.ai.domain;
+
+import jakarta.persistence.*;
+import lombok.Data;
+import org.hibernate.annotations.ColumnDefault;
+
+import java.time.Instant;
+
+@Data
+@Entity
+@Table(name = "t_rag_document")
+public class TRagDocument {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", nullable = false)
+    private Long id;
+
+    /**
+     * 文档业务编号（唯一标识）
+     */
+    @Column(name = "document_number", nullable = false, length = 200, unique = true)
+    private String documentNumber;
+
+    /**
+     * 上传的文档名称
+     */
+    @Column(name = "file_name", nullable = false, length = 500)
+    private String fileName;
+
+    /**
+     * 上传时间
+     */
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "upload_time", nullable = false)
+    private Instant uploadTime;
+
+    /**
+     * 修改时间
+     */
+    @ColumnDefault("CURRENT_TIMESTAMP")
+    @Column(name = "modify_time", nullable = false)
+    private Instant modifyTime;
+
+    @PrePersist
+    public void prePersist() {
+        Instant now = Instant.now();
+        if (uploadTime == null) uploadTime = now;
+        if (modifyTime == null) modifyTime = now;
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        modifyTime = Instant.now();
+    }
+
+}
+
