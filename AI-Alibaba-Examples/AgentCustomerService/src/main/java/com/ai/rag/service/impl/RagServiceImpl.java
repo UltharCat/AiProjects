@@ -12,7 +12,6 @@ import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
-import org.springframework.data.domain.Example;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -27,6 +26,10 @@ import java.util.*;
 @Service
 public class RagServiceImpl implements RagService {
 
+    private static final String META_DOCUMENT_NUMBER = "documentNumber";
+
+    private static final String META_FILE_NAME = "fileName";
+
     private final RagDocumentRepository repo;
 
     private final VectorStore vectorStore;
@@ -39,27 +42,32 @@ public class RagServiceImpl implements RagService {
     @Override
     @Transactional
     public boolean insertContent(RagDocAddRequest request) {
+        Assert.notNull(request, "request is null");
+        Assert.hasText(request.getContent(), "content is blank");
+
         var docNum = StringUtil.isNotBlank(request.getDocumentNumber()) ? request.getDocumentNumber() : UUID.randomUUID().toString();
-        // 查询本地库内是否已经存在数据
-        TRagDocument entity = repo.findOne(Example.of(TRagDocument.builder()
-                .documentNumber(docNum)
-                .build())
-        ).orElse(null);
+
+        // 查询本地库内是否已经存在数据（优先用业务键查询；Example 方式保留兼容，但不再依赖）
+        TRagDocument entity = repo.findByDocumentNumber(docNum).orElse(null);
+
         var fileName = Objects.nonNull(entity) ? entity.getFileName() : "content-insert-" + UUID.randomUUID();
+
         // 构建metadata
-        var metadata = Map.of("documentNumber", docNum,
-                "fileName", fileName);
+        Map<String, Object> metadata = Map.of(
+                META_DOCUMENT_NUMBER, docNum,
+                META_FILE_NAME, fileName
+        );
+
         // 拆分文本内容
         List<Document> splitDocs = TokenTextSplitter.builder()
                 .build()
-                .apply(
-                        List.of(Document.builder()
-                                .text(request.getContent())
-                                .build())
-                );
+                .apply(List.of(Document.builder().text(request.getContent()).build()));
+
         splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
+
         // 文档插入向量库
         vectorStore.add(splitDocs);
+
         // 如果存在托管实体，修改持久化字段以触发脏检测和 @PreUpdate
         if (entity != null) {
             entity.setModifyTime(Instant.now());
@@ -75,77 +83,103 @@ public class RagServiceImpl implements RagService {
     @Override
     @Transactional
     public boolean uploadFile(RagDocAddRequest request) throws IOException {
+        Assert.notNull(request, "request is null");
         var file = request.getFile();
-        // 构建临时文件
-        Path tempFile = Files.createTempFile("upload-", file.getOriginalFilename());
-        Files.copy(file.getInputStream(), tempFile, StandardCopyOption.REPLACE_EXISTING);
+        Assert.notNull(file, "file is null");
+        Assert.isTrue(!file.isEmpty(), "file is empty");
 
-        List<Document> docs;
         var fileName = file.getOriginalFilename();
-        Assert.notNull(fileName, "fileName is null");
-        // 拆分文档
-        if (fileName.toLowerCase().endsWith("pdf")) {
-            // PDF文件处理逻辑
-            PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(tempFile.toUri().toString());
-            docs = pdfReader.get();
-        } else {
-            // 其他文件处理逻辑
-            TikaDocumentReader tikaReader = new TikaDocumentReader(tempFile.toUri().toString());
-            docs = tikaReader.get();
+        Assert.hasText(fileName, "fileName is blank");
+
+        // 构建临时文件：Windows 下 suffix 更安全；originalFilename 可能包含路径分隔符，这里做最小处理
+        String safeSuffix = ".tmp";
+        int idx = fileName.lastIndexOf('.');
+        if (idx >= 0 && idx < fileName.length() - 1) {
+            safeSuffix = fileName.substring(idx);
         }
-        // 按句拆分文档
-        var splitDocs = TokenTextSplitter.builder().build().apply(docs);
-        // 设置文档metadata
-        var docNum = StringUtil.isNotBlank(request.getDocumentNumber()) ? request.getDocumentNumber() : UUID.randomUUID().toString();
-        var fileMetadata = Map.of("documentNumber", docNum,
-                "fileName", fileName);
-        splitDocs.forEach(d -> d.getMetadata().putAll(fileMetadata));
-        // 文档插入向量库
-        vectorStore.add(splitDocs);
-        // 记录文档数据
-        repo.save(TRagDocument.builder()
-                .documentNumber(docNum)
-                .fileName(fileName)
-                .build());
-        // 删除临时文件
-        Files.deleteIfExists(tempFile);
-        return true;
+
+        Path tempFile = Files.createTempFile("upload-", safeSuffix);
+
+        try {
+            // copy 输入流（让底层自动关闭）
+            try (var in = file.getInputStream()) {
+                Files.copy(in, tempFile, StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            List<Document> docs;
+            // 拆分文档
+            if (fileName.toLowerCase(Locale.ROOT).endsWith(".pdf")) {
+                PagePdfDocumentReader pdfReader = new PagePdfDocumentReader(tempFile.toUri().toString());
+                docs = pdfReader.get();
+            } else {
+                TikaDocumentReader tikaReader = new TikaDocumentReader(tempFile.toUri().toString());
+                docs = tikaReader.get();
+            }
+
+            // 按句拆分文档
+            var splitDocs = TokenTextSplitter.builder().build().apply(docs);
+
+            // 设置文档metadata
+            var docNum = StringUtil.isNotBlank(request.getDocumentNumber()) ? request.getDocumentNumber() : UUID.randomUUID().toString();
+            Map<String, Object> metadata = Map.of(
+                    META_DOCUMENT_NUMBER, docNum,
+                    META_FILE_NAME, fileName
+            );
+
+            splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
+
+            // 文档插入向量库
+            vectorStore.add(splitDocs);
+
+            // 记录文档数据（若同 documentNumber 已存在则只更新时间/文件名）
+            repo.findByDocumentNumber(docNum).ifPresentOrElse(existing -> existing.setModifyTime(Instant.now()),
+                    () -> repo.save(TRagDocument.builder()
+                    .documentNumber(docNum)
+                    .fileName(fileName)
+                    .build()));
+
+            return true;
+        } finally {
+            // 删除临时文件（确保异常时也不会泄漏）
+            Files.deleteIfExists(tempFile);
+        }
     }
 
     @Override
     public Map<String, List<Document>> searchDocuments(String content, int topK) {
+        Assert.hasText(content, "content is blank");
+        Assert.isTrue(topK > 0, "topK must be > 0");
+
         // 构建查询请求
         SearchRequest searchRequest = SearchRequest.builder()
                 .query(content)
                 .topK(topK)
                 .build();
+
         List<Document> docs = vectorStore.similaritySearch(searchRequest);
-        // fileName,List<Document> map
+
+        // fileName -> docs
         Map<String, List<Document>> docMap = new HashMap<>();
-        docs.forEach(d->{
-            docMap.compute(d.getMetadata().get("fileName").toString(), (k, v) -> {
-                if (Objects.isNull(v)) {
-                    return Collections.singletonList(d);
-                } else {
-                    v.add(d);
-                    return v;
-                }
-            });
-        });
+        for (Document d : docs) {
+            Object fileNameObj = d.getMetadata().get(META_FILE_NAME);
+            String key = (fileNameObj == null) ? "NoFileName" : String.valueOf(fileNameObj);
+            docMap.computeIfAbsent(key, k -> new ArrayList<>()).add(d);
+        }
         return docMap;
     }
 
     @Override
+    @Transactional
     public boolean deleteDocumentByNumber(String documentNumber) {
+        Assert.hasText(documentNumber, "documentNumber is blank");
+
         // 删除本地向量库记录
         FilterExpressionBuilder b = new FilterExpressionBuilder();
-        var expression = b.eq("documentNumber", documentNumber).build();
+        var expression = b.eq(META_DOCUMENT_NUMBER, documentNumber).build();
         vectorStore.delete(expression);
-        // 删除本地持久化记录
-        repo.delete(TRagDocument.builder()
-                .documentNumber(documentNumber)
-                .build());
-        return true;
+
+        // 删除本地持久化记录（按业务键删除）
+        return repo.deleteByDocumentNumber(documentNumber);
     }
 
 }
