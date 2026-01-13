@@ -1,7 +1,7 @@
-package com.ai.controller;
+package com.ai.agent.controller;
 
-import com.ai.request.AgentChatRequest;
-import com.ai.service.AgentService;
+import com.ai.agent.request.AgentChatRequest;
+import com.ai.agent.service.AgentService;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

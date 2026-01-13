@@ -1,4 +1,4 @@
-package com.ai.request;
+package com.ai.agent.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;

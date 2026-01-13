@@ -1,6 +1,6 @@
-package com.ai.service;
+package com.ai.agent.service;
 
-import com.ai.request.AgentChatRequest;
+import com.ai.agent.request.AgentChatRequest;
 import reactor.core.publisher.Flux;
 
 public interface AgentService {
