@@ -1,6 +1,6 @@
-package com.ai.repo;
+package com.ai.rag.repo;
 
-import com.ai.domain.TRagDocument;
+import com.ai.rag.domain.TRagDocument;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,12 +1,15 @@
-package com.ai.domain;
+package com.ai.rag.domain;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 @Entity
 @Table(name = "t_rag_document")
 public class TRagDocument {
@@ -17,7 +20,7 @@ public class TRagDocument {
     private Long id;
 
     /**
-     * 文档业务编号（唯一标识）
+     * 文档业务编号
      */
     @Column(name = "document_number", nullable = false, length = 200, unique = true)
     private String documentNumber;
