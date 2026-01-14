@@ -36,6 +36,15 @@ public class TOrderItem {
     private TProduct product;
 
     /**
+     * 关联库存
+     * 用途：指明该订单行对应的具体库存项（如有），用于处理少件/补发等场景。
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OnDelete(action = OnDeleteAction.CASCADE)
+    @JoinColumn(name = "inventory_id", nullable = false)
+    private TInventory inventory;
+
+    /**
      * 购买数量
      * 用途：用于处理少件/补发/退款时的数量判断。展示给用户时应与订单明细一致。
      */
