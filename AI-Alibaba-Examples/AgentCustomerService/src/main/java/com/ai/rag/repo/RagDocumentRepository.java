@@ -13,5 +13,6 @@ public interface RagDocumentRepository extends JpaRepository<TRagDocument, Long>
     Optional<TRagDocument> findByDocumentNumber(String documentNumber);
 
     boolean deleteByDocumentNumber(String documentNumber);
+
 }
 
