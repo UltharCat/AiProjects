@@ -2,12 +2,14 @@ package com.ai.agent.service.impl;
 
 import com.ai.agent.request.AgentChatRequest;
 import com.ai.agent.service.AgentService;
+import com.ai.tools.RagTools;
 import com.alibaba.cloud.ai.memory.redis.RedissonRedisChatMemoryRepository;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.tool.ToolCallbackProvider;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
@@ -25,7 +27,9 @@ public class AgentServiceImpl implements AgentService {
 
     public AgentServiceImpl(ChatClient.Builder builder,
                             RedissonRedisChatMemoryRepository redissonRedisChatMemoryRepository,
-                            VectorStore vectorStore) {
+                            VectorStore vectorStore,
+                            ToolCallbackProvider toolCallbackProvider,
+                            RagTools ragTools) {
         this.chatClient = builder
                 .defaultSystem("""
                         你是一个智能的电商客服助手，能够帮助用户解决购物过程中遇到的问题。
@@ -72,7 +76,8 @@ public class AgentServiceImpl implements AgentService {
 //                                                .build())
                                 .build()
                 )
-                .defaultTools()
+                .defaultTools(ragTools)
+                .defaultToolCallbacks(toolCallbackProvider)
                 .build();
     }
 
