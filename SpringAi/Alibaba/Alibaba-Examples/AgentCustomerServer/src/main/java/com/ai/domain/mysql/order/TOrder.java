@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Data;
 import opennlp.tools.util.StringUtil;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -43,7 +44,7 @@ public class TOrder {
      * 下单时间
      * 用途：用于判断售后时效、活动优惠核算等。
      */
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
     @Column(name = "order_date", nullable = false)
     private Instant orderDate;
 

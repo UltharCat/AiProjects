@@ -2,7 +2,8 @@ package com.ai.rag.domain;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 
@@ -34,14 +35,14 @@ public class TRagDocument {
     /**
      * 上传时间
      */
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @CreationTimestamp
     @Column(name = "upload_time", nullable = false)
     private Instant uploadTime;
 
     /**
      * 修改时间
      */
-    @ColumnDefault("CURRENT_TIMESTAMP")
+    @UpdateTimestamp
     @Column(name = "modify_time", nullable = false)
     private Instant modifyTime;
 

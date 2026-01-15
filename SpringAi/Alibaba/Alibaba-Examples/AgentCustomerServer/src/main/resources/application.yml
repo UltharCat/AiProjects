@@ -4,18 +4,14 @@ spring:
   application:
     name: AgentCustomerServiceServer
   datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
     url: jdbc:mysql://localhost:3306/agent?serverTimezone=UTC
     username: mysql
     password: mysql
     driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
-      mysql:
-        url: jdbc:mysql://localhost:3306/ai?serverTimezone=UTC
-        username: mysql
-        password: mysql
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        initial-size: 1
-        max-active: 10
+      initial-size: 1
+      max-active: 10
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
@@ -37,7 +33,7 @@ spring:
   jpa:
     show-sql: true
     hibernate:
-      ddl-auto: create # validate、update、create、create-drop
+      ddl-auto: validate # validate、update、create、create-drop
     properties:
       hibernate:
         format_sql: false
