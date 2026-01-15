@@ -94,7 +94,7 @@ Content-Type: application/json
 
 ## 代码结构（核心类）
 
-- 启动入口：`com.ai.AgentCustomerApplication`
+- 启动入口：`com.ai.AgentCustomerClientApplication`
 - Agent：
   - `com.ai.agent.controller.AgentController`
   - `com.ai.agent.service.impl.AgentServiceImpl`

@@ -14,7 +14,7 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>AgentCustomer</module>
+        <module>AgentCustomerClient</module>
         <module>AgentCustomerServer</module>
     </modules>
 

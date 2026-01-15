@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-Alibaba-FunctionCalling
+    name: Alibaba-FunctionCalling
   servlet:
     multipart:
       max-file-size: 10MB

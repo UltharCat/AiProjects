@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-Alibaba-MCP-Server
+    name: Alibaba-MCP-Server
   servlet:
     multipart:
       max-file-size: 10MB

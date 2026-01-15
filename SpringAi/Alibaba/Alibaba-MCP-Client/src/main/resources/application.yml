@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-Alibaba-MCP-Client
+    name: Alibaba-MCP-Client
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}

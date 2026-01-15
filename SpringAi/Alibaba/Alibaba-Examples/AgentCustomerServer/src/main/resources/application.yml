@@ -2,7 +2,7 @@ server:
   port: 18082
 spring:
   application:
-    name: AgentCustomerServiceServer
+    name: AgentCustomerServer
   datasource:
     type: com.alibaba.druid.pool.DruidDataSource
     url: jdbc:mysql://localhost:3306/agent?serverTimezone=UTC
@@ -20,7 +20,7 @@ spring:
           model: qwen-max
     mcp:
       server:
-        name: agent-customer-service-mcp-server
+        name: agent-customer-mcp-server
         protocol: STREAMABLE # SSE、STREAMABLE、STATELESS
         version: 1.0.0
         type: ASYNC  # Recommended for reactive applications

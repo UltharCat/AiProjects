@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-Model
+    name: Model
   data:
     redis:
       host: localhost

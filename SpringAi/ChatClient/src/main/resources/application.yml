@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-ChatClient
+    name: ChatClient
   data:
     redis:
       host: localhost

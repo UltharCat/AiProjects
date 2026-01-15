@@ -3,7 +3,7 @@ server:
 
 spring:
   application:
-    name: AI-Alibaba-Model
+    name: Alibaba-Model
   servlet:
     multipart:
       max-file-size: 10MB

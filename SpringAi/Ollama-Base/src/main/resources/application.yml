@@ -2,7 +2,7 @@ server:
   port: 8081
 spring:
   application:
-    name: AI-Ollama-Base
+    name: Ollama-Base
   ai:
     ollama:
       type: restTemplate
