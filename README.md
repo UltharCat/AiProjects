@@ -1,42 +1,132 @@
 # AI-Projects
 
-这是一个用于探索和实践各种大语言模型（LLM）和AI技术的Java项目集合。项目基于Spring Boot和Maven，采用多模块架构，整合了包括Ollama、OpenAI以及阿里巴巴通义千问在内的多种模型，旨在探索聊天、函数调用、多模态交互等不同AI应用场景的实现。
+这是一个用于探索和实践各种大语言模型（LLM）与 AI 工程化能力的 **Java/Spring Boot 多模块项目集合**。仓库聚焦于：
 
-## 项目概述
+- 多模型接入：Ollama、本地/云端 OpenAI Compatible、Alibaba DashScope（通义千问）
+- 多种交互形态：同步、SSE/HTTP 流式
+- Agent 能力：Tool Calling、MCP（Model Context Protocol）、RAG（向量检索增强）、会话记忆
+- 工程实践：多模块 Maven 组织、可复用的配置/封装方式
 
-本项目是一个多模块的Spring Boot工程，用于试验各种大语言模型（LLMs）和AI技术。项目探索了与不同AI服务（如Ollama、OpenAI、Alibaba）的集成，并记录了在开发过程中关于技术选型、架构设计和问题解决的思考。
+> 本仓库以“示例 + 实验”为主：各模块都尽量做到可运行、可复用，但部分能力需要依赖外部服务（Redis/MySQL/PostgreSQL/Ollama/DashScope）。
 
-## 模块说明
+---
 
-- **AI-Alibaba-FunctionCalling**: 探索和实现基于阿里巴巴通义千问模型的函数调用功能，同时兼有MCP Server的功能。
-- **AI-Alibaba-MCP-Client**: 尝试构建多模态对话客户端，但因依赖库版本问题暂未完全实现。
-- **AI-Alibaba-Model**: 用于阿里巴巴多模态模型学习的模块。
-- **AI-ChatClient**: 一个通用的、与具体模型无关的聊天客户端模块。
-- **AI-Model**: 试图兼容openai接口、ollma接口和dashscope接口，定义了项目中通用的模型实体和接口的模块。
-- **AI-Ollama-Base**: 提供了与本地模型服务Ollama集成的基础功能，使用restTemplate通过访问本地ollama接口进行间接模型访问。
+## 仓库结构（Maven Modules）
 
-## 开发思路与技术探索
+- 根聚合：`AiProjects`
+  - `LangChain4j-Examples`（示例聚合，内容以实际模块为准）
+  - `SpringAi`
+    - `Ollama-Base`
+    - `ChatClient`
+    - `Model`
+    - `Alibaba`
+      - `Alibaba-Model`
+      - `Alibaba-FunctionCalling`
+      - `Alibaba-MCP-Server`
+      - `Alibaba-MCP-Client`
+      - `Alibaba-Graph`
+      - `Alibaba-Examples`
+        - `AgentCustomer`
+        - `AgentCustomerServer`
 
-1. **Spring AOT (Ahead-Of-Time Compilation)**
-    -   通过在编译期处理自动配置和生成代理类，AOT可以显著减少应用的启动时间和运行时开销。
-    -   适用于无复杂静态初始化（如I/O操作）的POJO类，能有效提升性能。
-    -   自SpringBoot 3.2起支持，并在3.3版本中默认启用。
+---
 
-2. **统一AI模型调用**
-    -   尽管`spring-ai`项目致力于提供统一的API，但在当前版本（`1.0.0-M6`）中，针对聊天（Chat）、图像（Image）和音频（Audio）的调用封装仍存在差异。
-    -   不同模型的Prompt、Message和Options封装各不相同，开发者需要针对性地进行适配。
+## 快速开始（本地运行）
 
-3. **用户会话管理**
-    -   当前的Controller实现中缺少用户绑定。计划使用`Map`来关联用户会话（`Key`为Token），并结合Redis的TTL（Time-To-Live）机制来管理会话生命周期，确保多用户场景下的隔离性。
+### 1) 环境要求
 
-4. **Java与Python生态结合**
-    -   鉴于Python在AI领域的生态系统更为成熟，正在思考如何通过某种协议（如gRPC或HTTP）将Python的AI应用与Java后端服务进行高效结合，以弥补Java生态的不足。
+- JDK：21（根 `pom.xml` 指定）
+- Maven
 
-## 已知问题与记录
+### 2) 通用外部依赖（按模块选择）
 
-1.  **Alibaba DashScope依赖问题**
-    -   **模型支持不全**: `AI-Alibaba-Model`项目已停止，因为官方`DashScope`依赖对自家的Qwen系列模型支持不到位，特别是对多模态模型（如`qwen-vl-plus`）的支持缺失，导致无法进行完整的的多模态功能开发。
+- **Ollama**：默认 `http://localhost:11434`（用于 `Ollama-Base`、以及部分 spring-ai-ollama 示例模块）
+- **DashScope**：需要环境变量 `DASHSCOPE_API_KEY`（用于 Alibaba 系列模块以及 OpenAI compatible 示例）
+- **Redis**：默认 `localhost:6379`（用于会话记忆/ChatMemory）
+- **MySQL**：用于订单/工具类示例（FunctionCalling、MCP Server、AgentCustomerServer 等）
+- **PostgreSQL + pgvector**：用于本地向量库（Alibaba-Model、AgentCustomer 等）
 
-2.  **Spring AI客户端封装不一致**
-    -   `spring-ai`为不同模型提供了统一的`ChatClient`抽象，但对于图像和音频功能，缺少类似的客户端封装，需要直接调用各自的`ImageModel`或`AudioModel`，增加了开发复杂性。
+### 3) 构建（跳过测试）
 
+```powershell
+cd /d F:\JavaProjects\AiProjects
+mvn -q -DskipTests package
+```
+
+### 4) 运行单个模块（示例）
+
+```powershell
+# 例如：启动 Ollama-Base
+cd /d F:\JavaProjects\AiProjects\SpringAi\Ollama-Base
+mvn -q -DskipTests spring-boot:run
+```
+
+> 说明：部分模块默认端口存在重叠（例如多个模块使用 8081/18081）。并行运行时建议修改各自 `application.yml` 的 `server.port`。
+
+---
+
+## 模块导航与功能简介
+
+### SpringAi
+
+- **Ollama-Base**：最小 Ollama HTTP 转发示例（RestTemplate 调用 Ollama API）
+  - README：`SpringAi/Ollama-Base/README.md`
+
+- **ChatClient**：统一 `ChatClient` 的应用层示例（支持 Ollama/OpenAI compatible 切换 + 多种流式输出 + Redis ChatMemory）
+  - README：`SpringAi/ChatClient/README.md`
+
+- **Model**：模型层示例（`AiModelFactory` 统一选择 Chat/Image 等底层 Model，并支持运行时切换）
+  - README：`SpringAi/Model/README.md`
+
+### SpringAi/Alibaba
+
+- **Alibaba-Model**：DashScope 多能力示例（Chat/结构化输出/PromptTemplate、Image、Audio、RAG：PgVector 本地 + DashScope 远程向量库）
+  - README：`SpringAi/Alibaba/Alibaba-Model/README.md`
+
+- **Alibaba-FunctionCalling**：DashScope + Spring AI Tools 的订单查询 Tool Calling 示例（同时包含 MCP Server 配置）
+  - README：`SpringAi/Alibaba/Alibaba-FunctionCalling/README.md`
+
+- **Alibaba-MCP-Server**：MCP Server（WebMVC，`/mcp`）示例，注册 TimeTool/OrderTools 对外提供工具能力
+  - README：`SpringAi/Alibaba/Alibaba-MCP-Server/README.md`
+
+- **Alibaba-MCP-Client**：MCP Client（WebFlux）示例，连接 MCP Server 获取 Tools，并在对话中通过 toolCallbacks 调用远端工具
+  - README：`SpringAi/Alibaba/Alibaba-MCP-Client/README.md`
+
+- **Alibaba-Graph**：基于 spring-ai-alibaba-graph 的图编排/工作流示例（造句 ->（可选循环优化）-> 翻译 -> TTS）
+  - README：`SpringAi/Alibaba/Alibaba-Graph/README.md`
+
+- **Alibaba-Examples / AgentCustomer**：电商客服 Agent 示例（RAG + Redis 记忆 + Tools + 可选 MCP Client）
+  - README：`SpringAi/Alibaba/Alibaba-Examples/AgentCustomer/README.md`
+
+- **Alibaba-Examples / AgentCustomerServer**：为 Agent 场景配套的 MCP Server（WebFlux，`/mcp`），对外暴露订单工具
+  - README：`SpringAi/Alibaba/Alibaba-Examples/AgentCustomerServer/README.md`
+
+---
+
+## 一些实现要点（按当前代码现状整理）
+
+- **统一模型调用的两种路线**
+  - 使用 `ChatClient`（更贴近应用层：支持 advisor、memory、tool calling、stream）
+  - 直接使用底层 `Model<?, ?>`（更贴近能力层：ChatModel/ImageModel/AudioModel 等，通过工厂统一选择）
+
+- **会话记忆（ChatMemory）**
+  - `ChatClient` 模块提供了自定义 `RedisChatMemory`（Redis List + Lua 脚本原子追加/裁剪/续期 TTL）
+  - `AgentCustomer` 使用 Redis repository 进行对话记忆持久化
+
+- **RAG（向量检索增强）**
+  - `Alibaba-Model`：支持 PgVector（本地）与 DashScope Cloud Store（远程）两种向量存储模式切换
+  - `AgentCustomer`：提供 RAG 管理接口 + RAG Tools，便于在对话中由模型主动调用写入/检索/删除
+
+- **MCP（Model Context Protocol）**
+  - MCP Server：把 `@Tool` 方法以 MCP 形式暴露（默认 `/mcp`）
+  - MCP Client：把远端 MCP Tools 拉取为 `ToolCallbackProvider`，供对话时调用
+
+---
+
+## Changelog（仓库级）
+
+### v0.0.1-SNAPSHOT
+
+- 初始化多模块 Maven 工程（JDK 21 / Spring Boot 3.5.x / Spring AI 1.1.x）
+- 增加 Ollama、OpenAI compatible、DashScope 等多种模型接入示例
+- 增加 Tool Calling、MCP、RAG、Graph 等典型 AI 应用形态的示例子项目
