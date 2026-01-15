@@ -16,15 +16,8 @@
     <name>AiProjects</name>
 
     <modules>
-        <module>AI-Ollama-Base</module>
-        <module>AI-ChatClient</module>
-        <module>AI-Alibaba-Model</module>
-        <module>AI-Model</module>
-        <module>AI-Alibaba-FunctionCalling</module>
-        <module>AI-Alibaba-MCP-Client</module>
-        <module>AI-Alibaba-MCP-Server</module>
-        <module>AI-Alibaba-Graph</module>
-        <module>AI-Alibaba-Examples</module>
+        <module>LangChain4j-Examples</module>
+        <module>SpringAi</module>
     </modules>
 
     <packaging>pom</packaging>

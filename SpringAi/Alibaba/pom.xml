@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com</groupId>
+        <artifactId>SpringAi</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>Alibaba</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>Alibaba-Model</module>
+        <module>Alibaba-FunctionCalling</module>
+        <module>Alibaba-MCP-Client</module>
+        <module>Alibaba-MCP-Server</module>
+        <module>Alibaba-Graph</module>
+        <module>Alibaba-Examples</module>
+    </modules>
+
+</project>
