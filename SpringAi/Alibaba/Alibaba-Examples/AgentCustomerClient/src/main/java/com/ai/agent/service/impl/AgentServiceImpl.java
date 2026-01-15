@@ -17,6 +17,7 @@ import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDate;
 import java.util.Objects;
+import java.util.Optional;
 
 import static org.springframework.ai.chat.memory.ChatMemory.CONVERSATION_ID;
 
@@ -28,7 +29,7 @@ public class AgentServiceImpl implements AgentService {
     public AgentServiceImpl(ChatClient.Builder builder,
                             RedissonRedisChatMemoryRepository redissonRedisChatMemoryRepository,
                             VectorStore vectorStore,
-                            ToolCallbackProvider toolCallbackProvider,
+                            Optional<ToolCallbackProvider> toolCallbackProviderOpt,
                             RagTools ragTools) {
         this.chatClient = builder
                 .defaultSystem("""
@@ -77,7 +78,7 @@ public class AgentServiceImpl implements AgentService {
                                 .build()
                 )
                 .defaultTools(ragTools)
-                .defaultToolCallbacks(toolCallbackProvider)
+                .defaultToolCallbacks(toolCallbackProviderOpt.orElse(null))
                 .build();
     }
 
