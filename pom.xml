@@ -39,6 +39,8 @@
         <!--spring ai alibaba-->
         <spring-ai-alibaba.version>1.1.0.0-RC1</spring-ai-alibaba.version>
         <spring-ai-alibaba-extensions.version>1.1.0.0-RC1</spring-ai-alibaba-extensions.version>
+        <!-- langchain4j -->
+        <langchain4j.version>1.9.1-beta17</langchain4j.version>
     </properties>
 
     <dependencyManagement>
@@ -87,7 +89,7 @@
                 <version>${fastjson.version}</version>
                 <scope>compile</scope>
             </dependency>
-            <!-- ai alibaba -->
+            <!-- ai alibaba BOM -->
             <dependency>
                 <groupId>com.alibaba.cloud.ai</groupId>
                 <artifactId>spring-ai-alibaba-extensions-bom</artifactId>
@@ -99,6 +101,14 @@
                 <groupId>com.alibaba.cloud.ai</groupId>
                 <artifactId>spring-ai-alibaba-bom</artifactId>
                 <version>${spring-ai-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- langchain4j BOM -->
+            <dependency>
+                <groupId>dev.langchain4j</groupId>
+                <artifactId>langchain4j-community-bom</artifactId>
+                <version>${langchain4j.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
