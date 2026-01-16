@@ -31,7 +31,7 @@ public class AgentServiceImpl implements AgentService {
                             VectorStore vectorStore,
                             Optional<ToolCallbackProvider> toolCallbackProviderOpt,
                             RagTools ragTools) {
-        this.chatClient = builder
+        var b = builder
                 .defaultSystem("""
                         你是一个智能的电商客服助手，能够帮助用户解决购物过程中遇到的问题。
                         你可以提供订单查询、订单取消、商品推荐等操作。
@@ -77,9 +77,10 @@ public class AgentServiceImpl implements AgentService {
 //                                                .build())
                                 .build()
                 )
-                .defaultTools(ragTools)
-                .defaultToolCallbacks(toolCallbackProviderOpt.orElse(null))
-                .build();
+                .defaultTools(ragTools);
+        // 校验toolCallbackProvider是否存在，存在则设置默认的toolCallbacks
+        toolCallbackProviderOpt.ifPresent(b::defaultToolCallbacks);
+        this.chatClient = b.build();
     }
 
     @Override
