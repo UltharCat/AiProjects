@@ -11,6 +11,7 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,7 +67,7 @@ public class RagServiceImpl implements RagService {
         splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
 
         // 文档插入向量库
-        vectorStore.add(splitDocs);
+        this.addDocsToVectorStore(splitDocs);
 
         // 如果存在托管实体，修改持久化字段以触发脏检测和 @PreUpdate
         if (entity != null) {
@@ -129,7 +130,7 @@ public class RagServiceImpl implements RagService {
             splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
 
             // 文档插入向量库
-            vectorStore.add(splitDocs);
+            this.addDocsToVectorStore(splitDocs);
 
             // 记录文档数据（若同 documentNumber 已存在则只更新时间/文件名）
             repo.findByDocumentNumber(docNum).ifPresentOrElse(existing -> existing.setModifyTime(Instant.now()),
@@ -143,6 +144,11 @@ public class RagServiceImpl implements RagService {
             // 删除临时文件（确保异常时也不会泄漏）
             Files.deleteIfExists(tempFile);
         }
+    }
+
+    @Transactional(transactionManager = "pgTransactionManager")
+    public void addDocsToVectorStore(List<Document> docs) {
+        vectorStore.add(docs);
     }
 
     @Override
@@ -176,10 +182,15 @@ public class RagServiceImpl implements RagService {
         // 删除本地向量库记录
         FilterExpressionBuilder b = new FilterExpressionBuilder();
         var expression = b.eq(META_DOCUMENT_NUMBER, documentNumber).build();
-        vectorStore.delete(expression);
+        this.delDocsFromVectorStore(expression);
 
         // 删除本地持久化记录（按业务键删除）
         return repo.deleteByDocumentNumber(documentNumber);
+    }
+
+    @Transactional(transactionManager = "pgTransactionManager")
+    public void delDocsFromVectorStore(Filter.Expression expression) {
+        vectorStore.delete(expression);
     }
 
 }

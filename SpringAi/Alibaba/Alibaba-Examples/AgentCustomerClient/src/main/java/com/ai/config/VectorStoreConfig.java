@@ -19,7 +19,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 
 @AutoConfiguration(
-        after = {PgDataSourceConfig.class}
+        after = {PgVectorDataSourceConfig.class}
 )
 @ConditionalOnClass({PgVectorStore.class, DataSource.class, JdbcTemplate.class})
 @EnableConfigurationProperties({PgVectorStoreProperties.class})
