@@ -8,12 +8,12 @@ spring:
       max-file-size: 10MB
       max-request-size: 100MB
   datasource:
+    url: jdbc:mysql://localhost:3306/ai?serverTimezone=UTC
+    username: mysql
+    password: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
     druid:
       mysql:
-        url: jdbc:mysql://localhost:3306/ai?serverTimezone=UTC
-        username: mysql
-        password: mysql
-        driver-class-name: com.mysql.cj.jdbc.Driver
         initial-size: 1
         max-active: 10
       pgvector:
@@ -51,7 +51,7 @@ spring:
         timeout: 5000
     mcp:
       client:
-        enabled: false
+        enabled: true
         name: agent-customer-mcp-client
         version: 1.0.0
         request-timeout: 600s
