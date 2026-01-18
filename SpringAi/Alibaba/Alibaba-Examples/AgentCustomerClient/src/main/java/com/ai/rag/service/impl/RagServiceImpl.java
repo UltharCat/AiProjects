@@ -4,14 +4,12 @@ import com.ai.rag.domain.TRagDocument;
 import com.ai.rag.repo.RagDocumentRepository;
 import com.ai.rag.request.RagDocAddRequest;
 import com.ai.rag.service.RagService;
+import com.ai.rag.service.VectorStoreService;
 import jodd.util.StringUtil;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.reader.pdf.PagePdfDocumentReader;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.transformer.splitter.TokenTextSplitter;
-import org.springframework.ai.vectorstore.SearchRequest;
-import org.springframework.ai.vectorstore.VectorStore;
-import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,11 +31,12 @@ public class RagServiceImpl implements RagService {
 
     private final RagDocumentRepository repo;
 
-    private final VectorStore vectorStore;
+    private final VectorStoreService vectorStoreService;
 
-    public RagServiceImpl(RagDocumentRepository repo, VectorStore vectorStore) {
+    public RagServiceImpl(RagDocumentRepository repo,
+                          VectorStoreService vectorStoreService) {
         this.repo = repo;
-        this.vectorStore = vectorStore;
+        this.vectorStoreService = vectorStoreService;
     }
 
     @Override
@@ -67,7 +66,7 @@ public class RagServiceImpl implements RagService {
         splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
 
         // 文档插入向量库
-        this.addDocsToVectorStore(splitDocs);
+        vectorStoreService.addDocsToVectorStore(splitDocs);
 
         // 如果存在托管实体，修改持久化字段以触发脏检测和 @PreUpdate
         if (entity != null) {
@@ -130,7 +129,7 @@ public class RagServiceImpl implements RagService {
             splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
 
             // 文档插入向量库
-            this.addDocsToVectorStore(splitDocs);
+            vectorStoreService.addDocsToVectorStore(splitDocs);
 
             // 记录文档数据（若同 documentNumber 已存在则只更新时间/文件名）
             repo.findByDocumentNumber(docNum).ifPresentOrElse(existing -> existing.setModifyTime(Instant.now()),
@@ -146,23 +145,10 @@ public class RagServiceImpl implements RagService {
         }
     }
 
-    @Transactional(transactionManager = "pgTransactionManager")
-    public void addDocsToVectorStore(List<Document> docs) {
-        vectorStore.add(docs);
-    }
-
     @Override
     public Map<String, List<Document>> searchDocuments(String content, int topK) {
-        Assert.hasText(content, "content is blank");
-        Assert.isTrue(topK > 0, "topK must be > 0");
-
-        // 构建查询请求
-        SearchRequest searchRequest = SearchRequest.builder()
-                .query(content)
-                .topK(topK)
-                .build();
-
-        List<Document> docs = vectorStore.similaritySearch(searchRequest);
+        // 向量库搜索相似文档
+        List<Document> docs = vectorStoreService.searchSimilarDocs(content, topK);
 
         // fileName -> docs
         Map<String, List<Document>> docMap = new HashMap<>();
@@ -178,19 +164,13 @@ public class RagServiceImpl implements RagService {
     @Transactional
     public boolean deleteDocumentByNumber(String documentNumber) {
         Assert.hasText(documentNumber, "documentNumber is blank");
-
         // 删除本地向量库记录
         FilterExpressionBuilder b = new FilterExpressionBuilder();
         var expression = b.eq(META_DOCUMENT_NUMBER, documentNumber).build();
-        this.delDocsFromVectorStore(expression);
+        vectorStoreService.delDocsByExpression(expression);
 
         // 删除本地持久化记录（按业务键删除）
         return repo.deleteByDocumentNumber(documentNumber);
-    }
-
-    @Transactional(transactionManager = "pgTransactionManager")
-    public void delDocsFromVectorStore(Filter.Expression expression) {
-        vectorStore.delete(expression);
     }
 
 }
