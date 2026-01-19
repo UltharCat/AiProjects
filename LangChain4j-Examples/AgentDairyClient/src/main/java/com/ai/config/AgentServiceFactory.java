@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 public class AgentServiceFactory {
 
     @Bean
-    public AgentService agentService(QwenChatModel qwenChatModel) {
+    public AgentService chatAgentService(QwenChatModel qwenChatModel) {
         return AiServices.create(AgentService.class, qwenChatModel);
     }
 

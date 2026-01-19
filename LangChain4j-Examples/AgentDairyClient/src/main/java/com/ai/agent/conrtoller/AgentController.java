@@ -4,17 +4,17 @@ import com.ai.agent.request.AgentChatRequest;
 import com.ai.agent.response.AgentChatResponse;
 import com.ai.agent.service.AgentService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/agent")
 public class AgentController {
 
-    private final AgentService agentService;
+    private final AgentService chatAgentService;
 
-    public AgentController(AgentService agentService) {
-        this.agentService = agentService;
+    public AgentController(@Qualifier("chatAgentService") AgentService chatAgentService) {
+        this.chatAgentService = chatAgentService;
     }
 
     /**
@@ -24,9 +24,8 @@ public class AgentController {
      * @return 包含 Agent 回复、日记正文和图片 URL 列表的响应对象
      */
     @PostMapping("/chat")
-    public AgentChatResponse chat(@RequestPart("request") @Valid AgentChatRequest request,
-                                  @RequestPart(value = "file", required = false ) MultipartFile file) {
-        return agentService.chat(request);
+    public AgentChatResponse chat(@RequestBody @Valid AgentChatRequest request) {
+        return chatAgentService.chat(request);
     }
 
 }
