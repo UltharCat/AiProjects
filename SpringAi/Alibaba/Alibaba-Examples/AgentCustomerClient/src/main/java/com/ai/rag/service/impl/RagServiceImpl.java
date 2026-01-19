@@ -1,8 +1,8 @@
 package com.ai.rag.service.impl;
 
 import com.ai.rag.domain.TRagDocument;
+import com.ai.rag.dto.RagDocDto;
 import com.ai.rag.repo.RagDocumentRepository;
-import com.ai.rag.request.RagDocAddRequest;
 import com.ai.rag.service.RagService;
 import com.ai.rag.service.VectorStoreService;
 import jodd.util.StringUtil;
@@ -41,11 +41,11 @@ public class RagServiceImpl implements RagService {
 
     @Override
     @Transactional
-    public boolean insertContent(RagDocAddRequest request) {
-        Assert.notNull(request, "request is null");
-        Assert.hasText(request.getContent(), "content is blank");
+    public boolean insertContent(RagDocDto dto) {
+        Assert.notNull(dto, "RagDocDto is null");
+        Assert.hasText(dto.content(), "content is blank");
 
-        var docNum = StringUtil.isNotBlank(request.getDocumentNumber()) ? request.getDocumentNumber() : UUID.randomUUID().toString();
+        var docNum = StringUtil.isNotBlank(dto.documentNumber()) ? dto.documentNumber() : UUID.randomUUID().toString();
 
         // 查询本地库内是否已经存在数据（优先用业务键查询；Example 方式保留兼容，但不再依赖）
         TRagDocument entity = repo.findByDocumentNumber(docNum).orElse(null);
@@ -61,7 +61,7 @@ public class RagServiceImpl implements RagService {
         // 拆分文本内容
         List<Document> splitDocs = TokenTextSplitter.builder()
                 .build()
-                .apply(List.of(Document.builder().text(request.getContent()).build()));
+                .apply(List.of(Document.builder().text(dto.content()).build()));
 
         splitDocs.forEach(d -> d.getMetadata().putAll(metadata));
 
@@ -82,9 +82,9 @@ public class RagServiceImpl implements RagService {
 
     @Override
     @Transactional
-    public boolean uploadFile(RagDocAddRequest request) throws IOException {
-        Assert.notNull(request, "request is null");
-        var file = request.getFile();
+    public boolean uploadFile(RagDocDto dto) throws IOException {
+        Assert.notNull(dto, "RagDocDto is null");
+        var file = dto.ragFile();
         Assert.notNull(file, "file is null");
         Assert.isTrue(!file.isEmpty(), "file is empty");
 
@@ -120,7 +120,7 @@ public class RagServiceImpl implements RagService {
             var splitDocs = TokenTextSplitter.builder().build().apply(docs);
 
             // 设置文档metadata
-            var docNum = StringUtil.isNotBlank(request.getDocumentNumber()) ? request.getDocumentNumber() : UUID.randomUUID().toString();
+            var docNum = StringUtil.isNotBlank(dto.documentNumber()) ? dto.documentNumber() : UUID.randomUUID().toString();
             Map<String, Object> metadata = Map.of(
                     META_DOCUMENT_NUMBER, docNum,
                     META_FILE_NAME, fileName

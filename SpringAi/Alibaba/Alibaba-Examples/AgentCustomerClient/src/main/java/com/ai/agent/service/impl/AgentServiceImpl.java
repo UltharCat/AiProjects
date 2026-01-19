@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.scheduler.Schedulers;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.Objects;
 import java.util.Optional;
@@ -84,7 +85,7 @@ public class AgentServiceImpl implements AgentService {
     }
 
     @Override
-    public Flux<String> chat(AgentChatRequest request) {
+    public Flux<String> chat(AgentChatRequest request) throws IOException {
         return Flux.defer(() -> chatClient.prompt()
                 .system(s -> s.param("current_date", LocalDate.now().toString()))
                 .user(request.getContent())

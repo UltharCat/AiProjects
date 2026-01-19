@@ -2,7 +2,6 @@ package com.ai.agent.request;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
-import org.springframework.web.multipart.MultipartFile;
 
 
 @Data
@@ -19,10 +18,5 @@ public class AgentChatRequest {
      */
     @NotBlank(message = "用户输入内容不能为空")
     private String content;
-
-    /**
-     * rag文件
-     */
-    private MultipartFile file;
 
 }

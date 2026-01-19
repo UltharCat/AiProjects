@@ -1,13 +1,12 @@
 package com.ai.tools;
 
-import com.ai.rag.request.RagDocAddRequest;
+import com.ai.rag.dto.RagDocDto;
 import com.ai.rag.service.RagService;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -31,24 +30,8 @@ public class RagTools {
             插入文本请求。
             - content(必填)：要入库的文本
             - documentNumber(可选)：业务文档编号，用于将文本与某个文档归档/关联
-            """) RagDocAddRequest request) {
-        return ragService.insertContent(request);
-    }
-
-    @Tool(description = """
-            【RAG-写入】上传文件并将文件内容写入本地向量库（知识库）。
-
-            用途：读取文件内容 -> 向量化 -> 入库，便于后续检索。
-            入参：RagDocAddRequest（仅使用 file，可选 documentNumber 作为业务关联）。
-            返回：true=成功，false=失败。
-            异常：读取文件失败时抛出 IOException。
-            """)
-    boolean uploadFile(@ToolParam(description = """
-            上传文件入库请求。
-            - file(必填)：要上传的文件（MultipartFile）
-            - documentNumber(可选)：业务文档编号，用于把文件内容归档/关联到某个文档
-            """) RagDocAddRequest request) throws IOException {
-        return ragService.uploadFile(request);
+            """) RagDocDto dto) {
+        return ragService.insertContent(dto);
     }
 
     @Tool(description = """

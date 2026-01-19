@@ -1,6 +1,6 @@
 package com.ai.rag.service;
 
-import com.ai.rag.request.RagDocAddRequest;
+import com.ai.rag.dto.RagDocDto;
 import org.springframework.ai.document.Document;
 
 import java.io.IOException;
@@ -11,17 +11,17 @@ public interface RagService {
 
     /**
      * 插入文本内容到知识库
-     * @param request
+     * @param dto
      * @return
      */
-    boolean insertContent(RagDocAddRequest request);
+    boolean insertContent(RagDocDto dto);
 
     /**
      * 上传文件到知识库
-     * @param request
+     * @param dto
      * @return
      */
-    boolean uploadFile(RagDocAddRequest request) throws IOException;
+    boolean uploadFile(RagDocDto dto) throws IOException;
 
     /**
      * 搜索知识库中的相关文档

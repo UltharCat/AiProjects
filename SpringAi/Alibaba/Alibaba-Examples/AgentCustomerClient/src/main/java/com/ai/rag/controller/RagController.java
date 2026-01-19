@@ -1,10 +1,11 @@
 package com.ai.rag.controller;
 
-import com.ai.rag.request.RagDocAddRequest;
+import com.ai.rag.dto.RagDocDto;
 import com.ai.rag.service.RagService;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 
@@ -20,23 +21,28 @@ public class RagController {
 
     /**
      * 插入文本内容
-     * @param request
+     * @param content
+     * @param documentNumber
      * @return
      */
-    @PostMapping("/insert-content")
-    public ResponseEntity<String> insertContent(@RequestBody @Validated(RagDocAddRequest.insertContent.class) RagDocAddRequest request) {
-        boolean success = ragService.insertContent(request);
+    @GetMapping("/insert-content")
+    public ResponseEntity<String> insertContent(@RequestParam("content") String content,
+                                                @RequestParam(value = "documentNumber", required = false) String documentNumber) {
+        boolean success = ragService.insertContent(RagDocDto.builder().content(content).documentNumber(documentNumber).build());
         return success ? ResponseEntity.ok("Content inserted successfully") : ResponseEntity.status(500).body("Failed to insert content");
     }
 
     /**
      * 上传文件
-     * @param request
+     * @param ragFile
+     * @param documentNumber
      * @return
+     * @throws IOException
      */
-    @PostMapping(value = "/upload-file")
-    public ResponseEntity<String> uploadFile(@RequestBody @Validated(RagDocAddRequest.uploadFile.class) RagDocAddRequest request) throws IOException {
-        boolean success = ragService.uploadFile(request);
+    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<String> uploadFile(@RequestPart("ragFile") MultipartFile ragFile,
+                                             @RequestParam(value = "documentNumber", required = false) String documentNumber) throws IOException {
+        boolean success = ragService.uploadFile(RagDocDto.builder().ragFile(ragFile).documentNumber(documentNumber).build());
         return success ? ResponseEntity.ok("File uploaded successfully") : ResponseEntity.status(500).body("Failed to upload file");
     }
 
