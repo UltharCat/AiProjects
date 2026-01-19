@@ -1,0 +1,10 @@
+server:
+  port: 18082
+
+spring:
+  application:
+    name: AgentDairyServer
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB

@@ -13,8 +13,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>AgentDairyServer</module>
-        <module>AgentDairyClient</module>
+        <module>AgentDiaryServer</module>
+        <module>AgentDiaryClient</module>
     </modules>
 
 </project>

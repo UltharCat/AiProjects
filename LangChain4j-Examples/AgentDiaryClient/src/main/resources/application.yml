@@ -1,0 +1,46 @@
+server:
+  port: 18081
+
+spring:
+  application:
+    name: AgentDiaryClient
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 100MB
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/dairy?serverTimezone=UTC
+    username: mysql
+    password: mysql
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    druid:
+      mysql:
+        initial-size: 1
+        max-active: 10
+      pgvector:
+        driver-class-name: org.postgresql.Driver
+        url: jdbc:postgresql://localhost:5432/dairy
+        username: postgres
+        password: postgres
+        initial-size: 1
+        max-active: 10
+
+langchain4j:
+  community:
+    dashscope:
+      chat-model:
+        api-key: ${DASHSCOPE_API_KEY}
+        model-name: qwen-max
+        temperature: 0.4 # 温度越高，生成内容越随机
+        top-k: 1 # top-k采样，取前k个概率最高词汇分析
+        top-p: 0.7 # top-p采样，取累计小于p的词汇分析
+      embedding-model:
+        model-name: text-embedding-v4
+        api-key: ${DASHSCOPE_API_KEY}
+        dimension: 1024
+
+logging:
+  level:
+    dev:
+      langchain4j: DEBUG
