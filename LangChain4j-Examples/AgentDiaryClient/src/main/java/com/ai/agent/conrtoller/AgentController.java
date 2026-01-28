@@ -37,24 +37,13 @@ public class AgentController {
         }
         var memoryId = request.memoryId();
         var content = request.content();
-        GuidService.GUID_TYPE guidType = guidService.getGuidType(memoryId, content);
-        switch (guidType) {
-            case DIARY -> {
-                return diaryService.chat(memoryId, content);
-            }
-            case WEEK_SUMMARY -> {
-                return AgentChatResponse.builder()
-                        .responseText("该功能尚未拆分，敬请期待！")
-                        .build();
-            }
-            case CUSTOMER -> {
-                return AgentChatResponse.builder()
-                        .responseText("该功能尚未接入，敬请期待！")
-                        .build();
-            }
-            case null, default -> {
-                return guidService.guidChat(memoryId, content);
-            }
+        boolean isGreeting = guidService.isGreeting(content);
+        if (isGreeting) {
+            return AgentChatResponse.builder()
+                    .responseText("你好！很高兴见到你！有什么我可以帮忙的吗？")
+                    .build();
+        } else {
+            return diaryService.chat(memoryId, content);
         }
     }
 
