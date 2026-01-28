@@ -1,9 +1,12 @@
 package com.ai.config;
 
-import com.ai.agent.service.AgentService;
+import com.ai.agent.service.DiaryService;
+import com.ai.agent.service.GuidService;
+import com.ai.tools.TimeTools;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.memory.chat.ChatMemoryProvider;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
+import dev.langchain4j.model.ollama.OllamaChatModel;
 import dev.langchain4j.service.AiServices;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,20 +15,33 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 @Configuration
 public class AgentServiceFactory {
 
-    @Bean
-    public AgentService chatAgentService(QwenChatModel qwenChatModel,
-                                         StringRedisTemplate redisTemplate) {
-
-        ChatMemoryProvider chatMemoryProvider = memoryId -> MessageWindowChatMemory.builder()
+    private ChatMemoryProvider getChatMemoryProvider(StringRedisTemplate redisTemplate) {
+        return memoryId -> MessageWindowChatMemory.builder()
                 .id(memoryId)
                 // Keep the last 100 messages in memory
                 .maxMessages(100)
                 .chatMemoryStore(new RedisChatMemoryStore(redisTemplate))
                 .build();
+    }
 
-        return AiServices.builder(AgentService.class)
+    @Bean
+    public GuidService guidService(OllamaChatModel ollamaChatModel,
+                                   QwenChatModel qwenChatModel,
+                                   StringRedisTemplate redisTemplate) {
+        return AiServices.builder(GuidService.class)
                 .chatModel(qwenChatModel)
-                .chatMemoryProvider(chatMemoryProvider)
+                .chatMemoryProvider(this.getChatMemoryProvider(redisTemplate))
+                .build();
+    }
+
+    @Bean
+    public DiaryService diaryService(QwenChatModel qwenChatModel,
+                                     StringRedisTemplate redisTemplate,
+                                     TimeTools timeTools) {
+        return AiServices.builder(DiaryService.class)
+                .chatModel(qwenChatModel)
+                .chatMemoryProvider(this.getChatMemoryProvider(redisTemplate))
+                .tools(timeTools)
                 .build();
     }
 

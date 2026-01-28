@@ -2,11 +2,11 @@ package com.ai.config;
 
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
-import org.apache.commons.lang3.RandomUtils;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import static dev.langchain4j.data.message.ChatMessageDeserializer.messagesFromJson;
 import static dev.langchain4j.data.message.ChatMessageSerializer.messagesToJson;
@@ -46,7 +46,7 @@ public class RedisChatMemoryStore implements ChatMemoryStore {
     public void updateMessages(Object memoryId, List<ChatMessage> messages) {
         String json = messagesToJson(messages);
         // 为了防止大量key在同一时间过期，增加一个随机的TTL偏移量
-        Duration ttl = baseTtl.plusSeconds(RandomUtils.insecure().randomLong(0, 3600));
+        Duration ttl = baseTtl.plusSeconds(ThreadLocalRandom.current().nextLong(0, 3600)); // 在0到3600秒（1小时）之间随机增加TTL
         redisTemplate.opsForValue().set(this.createKey(memoryId), json, ttl);
     }
 

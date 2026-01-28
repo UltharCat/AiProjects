@@ -2,19 +2,23 @@ package com.ai.agent.conrtoller;
 
 import com.ai.agent.request.AgentChatRequest;
 import com.ai.agent.response.AgentChatResponse;
-import com.ai.agent.service.AgentService;
+import com.ai.agent.service.DiaryService;
+import com.ai.agent.service.GuidService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/agent")
 public class AgentController {
 
-    private final AgentService chatAgentService;
+    private final DiaryService diaryService;
+    private final GuidService guidService;
 
-    public AgentController(@Qualifier("chatAgentService") AgentService chatAgentService) {
-        this.chatAgentService = chatAgentService;
+    public AgentController(DiaryService diaryService,
+                           GuidService guidService) {
+        this.diaryService = diaryService;
+        this.guidService = guidService;
     }
 
     /**
@@ -25,7 +29,33 @@ public class AgentController {
      */
     @PostMapping("/chat")
     public AgentChatResponse chat(@RequestBody @Valid AgentChatRequest request) {
-        return chatAgentService.chat(request);
+        if (!CollectionUtils.isEmpty(request.imgUrls())){
+            // 图文模型解析图片，生成用户的心情日记，后续agent需要附加分析这篇心情日记
+            return AgentChatResponse.builder()
+                    .responseText("当前版本不支持图片处理，敬请期待！")
+                    .build();
+        }
+        var memoryId = request.memoryId();
+        var content = request.content();
+        GuidService.GUID_TYPE guidType = guidService.getGuidType(memoryId, content);
+        switch (guidType) {
+            case DIARY -> {
+                return diaryService.chat(memoryId, content);
+            }
+            case WEEK_SUMMARY -> {
+                return AgentChatResponse.builder()
+                        .responseText("该功能尚未拆分，敬请期待！")
+                        .build();
+            }
+            case CUSTOMER -> {
+                return AgentChatResponse.builder()
+                        .responseText("该功能尚未接入，敬请期待！")
+                        .build();
+            }
+            case null, default -> {
+                return guidService.guidChat(memoryId, content);
+            }
+        }
     }
 
 }
