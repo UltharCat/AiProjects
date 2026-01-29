@@ -25,11 +25,9 @@ public class AgentServiceFactory {
     }
 
     @Bean
-    public GuidService guidService(OllamaChatModel ollamaChatModel,
-                                   StringRedisTemplate redisTemplate) {
+    public GuidService guidService(OllamaChatModel ollamaChatModel) {
         return AiServices.builder(GuidService.class)
                 .chatModel(ollamaChatModel)
-                .chatMemoryProvider(this.getChatMemoryProvider(redisTemplate))
                 .build();
     }
 
