@@ -33,6 +33,7 @@
         <druid.version>1.2.22</druid.version>
         <mysql.version>9.5.0</mysql.version>
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
+        <hutool.version>5.8.26</hutool.version>
         <!--spring ai-->
         <spring-ai.version>1.1.0</spring-ai.version>
         <!--fastjson-->
@@ -43,6 +44,10 @@
         <!-- langchain4j -->
         <langchain4j.version>1.9.1</langchain4j.version>
         <langchain4j-community.version>1.9.1-beta17</langchain4j-community.version>
+        <!-- rocketMQ -->
+        <rocketmq.version>2.3.5</rocketmq.version>
+        <!-- dubbo -->
+        <dubbo.version>3.2.11</dubbo.version>
     </properties>
 
     <dependencyManagement>
@@ -118,6 +123,42 @@
                 <version>${langchain4j.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- rocket MQ -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq.version}</version>
+            </dependency>
+            <!-- Flyway -->
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-core</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-mysql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.flywaydb</groupId>
+                <artifactId>flyway-database-postgresql</artifactId>
+                <version>${flyway.version}</version>
+            </dependency>
+            <!-- Dubbo BOM -->
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-bom</artifactId>
+                <version>${dubbo.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Hutool -->
+            <dependency>
+                <groupId>cn.hutool</groupId>
+                <artifactId>hutool-all</artifactId>
+                <version>${hutool.version}</version>
             </dependency>
 
         </dependencies>
