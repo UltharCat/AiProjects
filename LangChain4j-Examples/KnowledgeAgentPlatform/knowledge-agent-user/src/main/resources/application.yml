@@ -4,7 +4,7 @@ spring:
   application:
     name: knowledge-agent-user
   datasource:
-    url: jdbc:mysql://localhost:3306/knowledge_agent_user?useSSL=false&serverTimezone=UTC
+    url: jdbc:mysql://localhost:3306/knowledge_agent?useSSL=false&serverTimezone=UTC
     username: root
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -17,7 +17,7 @@ dubbo:
     name: knowledge-agent-user
     port: 28081
   registry:
-    address: nacos://localhost:8091
+    address: nacos://127.0.0.1:8848
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

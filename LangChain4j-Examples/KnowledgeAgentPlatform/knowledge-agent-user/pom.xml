@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.dubbo</groupId>
-            <artifactId>dubbo-registry-nacos</artifactId>
+            <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
         </dependency>
         <!-- 3.数据库与ORM -->
         <dependency>

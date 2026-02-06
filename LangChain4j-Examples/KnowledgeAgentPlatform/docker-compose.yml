@@ -16,9 +16,9 @@ services:
       NACOS_AUTH_IDENTITY_KEY: serverIdentity
       NACOS_AUTH_IDENTITY_VALUE: security
     ports:
-      - "8091:8080"
-      - "8848:8848"
-      - "9848:9848"
+      - "8091:8080" # Nacos Web Port
+      - "8848:8848" # Nacos RPC Port
+      - "9848:9848" # Nacos gRPC Port
     volumes:
       - k-nacos-logs:/home/nacos/logs
       - k-nacos-data:/home/nacos/data
