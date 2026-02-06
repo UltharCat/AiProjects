@@ -10,9 +10,19 @@
     <artifactId>knowledge-agent-user</artifactId>
 
     <dependencies>
+        <!-- 1.内部依赖 -->
         <dependency>
             <groupId>com.knowledge.agent</groupId>
             <artifactId>knowledge-agent-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.knowledge.agent</groupId>
+            <artifactId>knowledge-agent-common</artifactId>
+        </dependency>
+        <!-- 2.web & dubbo -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
             <groupId>org.apache.dubbo</groupId>
@@ -22,6 +32,7 @@
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-registry-nacos</artifactId>
         </dependency>
+        <!-- 3.数据库与ORM -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
@@ -30,5 +41,20 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
+        <!-- 4.版本管理 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-mysql</artifactId>
+        </dependency>
+        <!-- 5. 密码加密 -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
