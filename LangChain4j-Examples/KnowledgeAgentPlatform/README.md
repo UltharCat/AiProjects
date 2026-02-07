@@ -13,7 +13,7 @@
 
 *   **Core Framework**: Spring Boot 3.2+ (JDK 21 虚拟线程 - Virtual Threads)
 *   **Microservices Framework**: **Apache Dubbo 3.x** (Triple Protocol) - 高性能 RPC 通信。
-*   **Registry & Config**: **Alibaba Nacos 2.x** - 统一服务注册与发现、分布式动态配置中心 (通过 `bootstrap.yml` 引导)。
+*   **Registry & Config**: **Alibaba Nacos 3.x** - 统一服务注册与发现、分布式动态配置中心。
 *   **AI Framework**: LangChain4j (ReAct Agent, RAG, Tooling)
 *   **LLM Providers**:
     *   **国内**: 通义千问 (DashScope)

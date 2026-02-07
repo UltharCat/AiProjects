@@ -8,11 +8,13 @@
 **目标**: 准备本地开发环境并确保所有依赖项已管理。
 
 - [x] **项目结构**: 创建 Maven 模块 (`common`, `api`, `user`, `core`, `rag`, `gateway`)。
-- [x] **依赖管理**: 修复根目录 `AiProjects/pom.xml` 中的 `flyway.version` 和 `dubbo.version`。
+- [ ] **Dubbo 配置**:
+    - 引入 `dubbo-spring-boot-starter` 及 `dubbo-nacos-spring-boot-starter` 依赖。
+    - 配置 `application.yml` 包含 Dubbo 注册中心地址 (Nacos) 和服务暴露设置。
 - [ ] **Nacos 配置集成**:
-    - 引入关键依赖: `spring-cloud-starter-alibaba-nacos-config` 和 `spring-cloud-starter-bootstrap`。
+    - 引入关键依赖: `spring-alibaba-nacos-config`。
     - 服务引导配置: 为每个服务模块 (`user`, `core`, `rag`, `gateway`) 创建 `bootstrap.yml`。
-    - 配置内容: 设置 `spring.cloud.nacos.config.server-addr` 及 `file-extension: yaml` 以启用动态配置管理。
+    - 配置内容: 设置 `spring.nacos.config.server-addr` 及 `spring.config.import[0]=nacos:springboot3x.properties?group=DEFAULT_GROUP`。
 - [ ] **基础设施 (Docker)**: 使用 Docker Compose 设置以下服务：
     - **Nacos** (注册与配置中心) - 端口 `8848`
     - **MySQL 8.0+** (用户/核心数据库) - 端口 `3306`

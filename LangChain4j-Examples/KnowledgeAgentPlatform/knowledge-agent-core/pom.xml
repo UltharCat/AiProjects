@@ -10,10 +10,12 @@
     <artifactId>knowledge-agent-core</artifactId>
 
     <dependencies>
+        <!-- 1.内部依赖 -->
         <dependency>
             <groupId>com.knowledge.agent</groupId>
             <artifactId>knowledge-agent-api</artifactId>
         </dependency>
+        <!-- 2.web&dubbo -->
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-spring-boot-starter</artifactId>

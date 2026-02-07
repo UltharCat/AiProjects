@@ -50,7 +50,9 @@
         <!-- dubbo -->
         <dubbo.version>3.2.11</dubbo.version>
         <!-- flyway -->
-        <flyway.version>10.8.1</flyway.version>
+        <flyway.version>9.9.0</flyway.version>
+        <!-- nacos -->
+        <nacos.version>2025.1.0.0</nacos.version>
     </properties>
 
     <dependencyManagement>
@@ -145,16 +147,6 @@
                 <artifactId>flyway-core</artifactId>
                 <version>${flyway.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-mysql</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-database-postgresql</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
             <!-- Dubbo BOM -->
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
@@ -169,7 +161,12 @@
                 <artifactId>hutool-all</artifactId>
                 <version>${hutool.version}</version>
             </dependency>
-
+            <!-- nacos -->
+            <dependency>
+                <groupId>com.alibaba.cloud</groupId>
+                <artifactId>spring-alibaba-nacos-config</artifactId>
+                <version>${nacos.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
