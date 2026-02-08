@@ -1,9 +1,9 @@
 package com.ai.alibaba.node;
 
+import cn.hutool.core.lang.TypeReference;
+import cn.hutool.json.JSONUtil;
 import com.alibaba.cloud.ai.graph.OverAllState;
 import com.alibaba.cloud.ai.graph.action.NodeAction;
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -40,8 +40,8 @@ public class GenerateSentenceNode implements NodeAction {
                 .call()
                 .content();
 
-        Assert.notNull(content,"chatClient generate returned null content");
-        return JSON.parseObject(content, new TypeReference<>() {});
+        Assert.notNull(content,"chatClient generate returned null content");;
+        return JSONUtil.parse(content).toBean(new TypeReference<>() {});
     }
 
 }
