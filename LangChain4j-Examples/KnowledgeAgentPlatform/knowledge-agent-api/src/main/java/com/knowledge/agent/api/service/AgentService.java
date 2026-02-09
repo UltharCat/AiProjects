@@ -1,6 +1,6 @@
 package com.knowledge.agent.api.service;
 
-import com.knowledge.agent.api.dto.ChatRequest;
+import com.knowledge.agent.api.request.ChatRequest;
 import com.knowledge.agent.common.resp.Result;
 
 public interface AgentService {

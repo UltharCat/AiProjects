@@ -1,4 +1,4 @@
-package com.knowledge.agent.api.dto;
+package com.knowledge.agent.api.request;
 
 import java.io.Serializable;
 

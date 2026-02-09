@@ -10,6 +10,12 @@
     <artifactId>knowledge-agent-rag</artifactId>
 
     <dependencies>
+        <!-- unit test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 1.内部依赖 -->
         <dependency>
             <groupId>com.knowledge.agent</groupId>
@@ -24,7 +30,24 @@
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-pgvector</artifactId>
         </dependency>
-        <!-- rocketmq -->
+        <!-- 3.版本管理与pgvector-store -->
+        <!-- Flyway 核心 -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+            <!-- 版本由 Spring Boot Parent 管理 -->
+        </dependency>
+        <!-- Flyway PostgreSQL 支持 (用于 pgvector, Flyway 10+ 必需) -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+            <!-- 版本由 Spring Boot Parent 管理 -->
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-pgvector</artifactId>
+        </dependency>
+        <!-- 4.rocketmq -->
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-spring-boot-starter</artifactId>

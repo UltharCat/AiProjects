@@ -1,0 +1,10 @@
+spring:
+  config:
+    import[0]: nacos:knowledge-agent-user?group=KNOWLEDGE_AGENT
+  cloud:
+    nacos:
+      config:
+        server-addr: localhost:8848
+        username: nacos
+        password: nacos
+        file-extension: yaml

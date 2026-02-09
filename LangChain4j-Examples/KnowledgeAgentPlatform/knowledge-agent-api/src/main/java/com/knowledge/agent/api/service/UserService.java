@@ -1,6 +1,6 @@
 package com.knowledge.agent.api.service;
 
-import com.knowledge.agent.api.dto.UserLoginRequest;
+import com.knowledge.agent.api.request.UserLoginRequest;
 import com.knowledge.agent.common.resp.Result;
 
 public interface UserService {

@@ -1,7 +1,7 @@
 package com.knowledge.agent.user.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.knowledge.agent.api.dto.UserLoginRequest;
+import com.knowledge.agent.api.request.UserLoginRequest;
 import com.knowledge.agent.api.service.UserService;
 import com.knowledge.agent.common.exception.BusinessException;
 import com.knowledge.agent.common.resp.Result;

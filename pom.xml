@@ -28,6 +28,8 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <maven.compiler.release>21</maven.compiler.release>
+        <!-- spring cloud -->
+        <spring-cloud.version>2025.0.1</spring-cloud.version>
         <!-- lombok -->
         <lombok.version>1.18.30</lombok.version>
         <!-- jasypt -->
@@ -36,14 +38,10 @@
         <hutool.version>5.8.26</hutool.version>
         <!-- druid -->
         <druid.version>1.2.22</druid.version>
-        <!-- flyway -->
-        <flyway.version>9.9.0</flyway.version>
-        <!-- mysql -->
-        <mysql.version>9.5.0</mysql.version>
         <!-- mybatis-plus -->
         <mybatis-plus.version>3.5.15</mybatis-plus.version>
         <!-- nacos -->
-        <nacos.version>2023.0.3.2</nacos.version>
+        <nacos.version>2025.0.0.0</nacos.version>
         <!-- dubbo -->
         <dubbo.version>3.2.11</dubbo.version>
         <!-- spring ai -->
@@ -61,6 +59,14 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- spring cloud bom -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <!-- lombok -->
             <dependency>
                 <groupId>org.projectlombok</groupId>
@@ -86,19 +92,6 @@
                 <artifactId>druid-spring-boot-3-starter</artifactId>
                 <version>${druid.version}</version>
             </dependency>
-            <!-- flyway -->
-            <dependency>
-                <groupId>org.flywaydb</groupId>
-                <artifactId>flyway-core</artifactId>
-                <version>${flyway.version}</version>
-            </dependency>
-            <!-- mysql -->
-            <dependency>
-                <groupId>com.mysql</groupId>
-                <artifactId>mysql-connector-j</artifactId>
-                <scope>runtime</scope>
-                <version>${mysql.version}</version>
-            </dependency>
             <!-- mybatis-plus -->
             <dependency>
                 <groupId>com.baomidou</groupId>
@@ -108,7 +101,7 @@
             <!-- nacos -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-alibaba-nacos-config</artifactId>
+                <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
                 <version>${nacos.version}</version>
             </dependency>
             <!-- Dubbo BOM -->

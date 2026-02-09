@@ -10,10 +10,25 @@
     <artifactId>knowledge-agent-gateway</artifactId>
 
     <dependencies>
+        <!-- unit test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
         <!-- 1.内部依赖 -->
         <dependency>
             <groupId>com.knowledge.agent</groupId>
             <artifactId>knowledge-agent-api</artifactId>
+        </dependency>
+        <!-- 2.dubbo -->
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>
