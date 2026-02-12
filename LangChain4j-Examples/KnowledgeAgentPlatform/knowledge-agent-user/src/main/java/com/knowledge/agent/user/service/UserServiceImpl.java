@@ -1,4 +1,4 @@
-package com.knowledge.agent.user.service.impl;
+package com.knowledge.agent.user.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.knowledge.agent.api.request.UserLoginRequest;

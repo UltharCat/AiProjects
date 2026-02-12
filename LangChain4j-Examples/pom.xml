@@ -13,8 +13,6 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>AgentDiaryServer</module>
-        <module>AgentDiaryClient</module>
         <module>KnowledgeAgentPlatform</module>
     </modules>
 

@@ -49,37 +49,7 @@ services:
     volumes:
       - k-mysql-data:/var/lib/mysql
 
-  # 4. PostgreSQL with pgvector (Vector Store)
-  postgres:
-    image: pgvector/pgvector:0.8.1-pg18-trixie
-    container_name: agent-postgres
-    networks:
-      - knet
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: knowledge_rag
-    ports:
-      - "5432:5432"
-    volumes:
-      - k-pgvector-data:/var/lib/postgresql
-
-  # 5. Neo4j (Knowledge Graph)
-  neo4j:
-    image: neo4j:latest
-    container_name: agent-neo4j
-    networks:
-      - knet
-    environment:
-      NEO4J_AUTH: neo4j/agentneo4j
-    ports:
-      - "7474:7474" # HTTP
-      - "7687:7687" # Bolt
-    volumes:
-      - k-neo4j-data:/data
-      - k-neo4j-logs:/logs
-
-  # 6. RocketMQ (Messaging) - Optional for Phase 1
+  # 4. RocketMQ (Messaging) - Optional for Phase 1
   rmqnamesrv:
     image: apache/rocketmq:latest
     container_name: rmqnamesrv
@@ -138,9 +108,6 @@ volumes:
   k-nacos-data:
   k-redis-data:
   k-mysql-data:
-  k-pgvector-data:
-  k-neo4j-logs:
-  k-neo4j-data:
   k-rmq-tmp:
 
 networks:

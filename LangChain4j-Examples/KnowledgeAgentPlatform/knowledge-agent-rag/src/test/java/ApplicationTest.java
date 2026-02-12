@@ -1,18 +1,18 @@
 import com.knowledge.agent.rag.KnowledgeAgentRagApplication;
+import dev.langchain4j.model.embedding.EmbeddingModel;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest(classes = KnowledgeAgentRagApplication.class)
 public class ApplicationTest {
 
-    @Value("${spring.datasource.url}")
-    public String test;
-
+    @Autowired
+    public EmbeddingModel embeddingModel;
 
     @Test
     public void contextLoads() {
-        System.out.println(test);
+        System.out.println("embeddingModel test: " + embeddingModel.embed("测试"));
     }
 
 }

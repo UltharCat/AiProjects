@@ -16,13 +16,15 @@
 *   **Registry & Config**: **Alibaba Nacos 3.x** - 统一服务注册与发现、分布式动态配置中心。
 *   **AI Framework**: LangChain4j (ReAct Agent, RAG, Tooling)
 *   **LLM Providers**:
-    *   **国内**: 通义千问 (DashScope)
-    *   **国外**: Google Gemini (通过 OpenAI 接口兼容协议接入)
+    *   **Chat Model**: Google Gemini (via `langchain4j-google-ai-gemini`)
+    *   **Embedding Model**: Google Gemini (via `langchain4j-google-ai-gemini`)
+    *   *(Future/Opt)* **OpenAI**: 计划在优化阶段引入，提供更强的 Embedding 或备用对话模型。
 *   **Storage**:
     *   **MySQL**: 这里的用户管理 (MyBatis-Plus) 与基础业务数据。
     *   **Redis**: 短期记忆缓存 (Sliding Window)、用户会话状态。
-    *   **PostgreSQL (PGVector)**: 向量数据库 (混合检索)。
-    *   **Neo4j**: 知识图谱 (存储知识点结构与关系)。
+    *   **Milvus**: 向量数据库，存储 Embedding，提供语义检索。
+    *   *(Future/Opt)* **Elasticsearch**: 计划在优化阶段引入，提供 BM25 全文检索。
+    *   *(Future/Opt)* **Neo4j**: 计划在优化阶段引入，构建知识图谱。
 *   **Messaging**: RocketMQ 5.x (系统解耦、事务消息保障数据一致性)。
 *   **Architecture**: Dubbo Microservices (Restless/Headless Back-end).
 
@@ -45,31 +47,33 @@
     *   通信：通过 Dubbo 调用 RAG Service 获取知识，调用 User Service 获取画像。
 *   **RAG Service (Provider)**:
     *   知识检索与存储中心。
-    *   功能：向量化 (Embedding)、混合检索 (Keyword + Vector)、图谱查询 (Cypher)。
-    *   技术：PGVector + Neo4j。
+    *   功能：向量化 (Embedding)、语义检索。
+    *   技术：Milvus。
 
-### 2. 记忆与知识库设计 (Hybrid Memory & Knowledge Graph)
-采用 **混合记忆体系**：
-*   **短期记忆 (Short-term)**: 存储于 **Redis**。保存最近的对话上下文，确保多轮对话流畅。
-*   **长期记忆 (Long-term)**:
-    *   **非结构化**: 模型总结压缩后的对话精华，存入 **PGVector**。
-    *   **结构化**: 关键知识点提取为实体与关系，存入 **Neo4j** (知识图谱)。
-*   **RAG 策略**:
-    *   结合 **关键字检索 (Keyword/BM25)** 与 **向量检索 (Vector/Embedding)**。
-    *   Agent 回答时，不仅参考当前角色设定的知识，更优先检索**用户个人知识库**及**可复用的公共知识**。
+### 2. 记忆与知识库设计 (Storage Strategy)
+采用 **分层记忆体系**，明确区分"客观文档"与"主观认知"：
+
+*   **MySQL (Core Truth)**: 
+    *   存储所有 **Knowledge Card** 的完整内容、元数据及艾宾浩斯算法参数 (`review_count`, `ef`, `interval` 等)。
+    *   **关联更新策略**: 当发生深度辅导导致知识点进化时，直接 **覆盖 (Overwrite)** MySQL 中的 `answer` 字段，代表当前最新的认知状态。
+*   **Milvus (Semantic Index)**: 
+    *   存储文本的 Embedding 向量。
+    *   **静态文档库**: 存储参考书籍/文档切片，策略为 **只增不改 (Append-only)**。
+    *   **内化知识库**: 存储 Knowledge Card 向量，策略为 **删旧插新 (Delete Old & Insert New)**，确保向量检索总是命中最新的知识形态。
+*   **Redis (Short-term)**: 
+    *   保存最近的对话上下文 (Sliding Window)，确保多轮对话流畅。
 
 ### 3. Agent 核心机制
-*   **ReAct 架构**: Agent 具备"思考-行动"循环能力，解析用户需求后调度不同工具或子 Agent��
-*   **动态角色进化**:
-    *   用户登录时绑定专属角色。
-    *   根据历史对话的情感、语气偏好，动态调整 Agent 的 Prompt 配置，使其逐渐"适应"用户。
-*   **状态机 (State Machine)**: 严格管理会话状态（闲聊 -> 学习 -> 总结 -> 确认 -> 归档）。
+*   **ReAct 架构**: Agent 具备"思考-行动"循环能力，解析用户需求后调度不同工具或子 Agent。
+*   **状态机 (State Machine)**: 严格管理会话状态（闲聊 -> 学习 -> 总结 -> 确认 -> 归档），防止 Prompt 漂移。
+*   *(Future/Opt)* **动态角色进化**:
+    *   计划在优化阶段实现。根据历史对话的情感、语气偏好，动态调整 Agent 的 Prompt 配置，使其逐渐"适应"用户。
 
 ### 4. 高并发与一致性
 *   **虚拟线程 (Virtual Threads)**: 全链路启用 JDK 21 虚拟线程，大幅提升 RPC 调用和 IO 密集型任务吞吐。
 *   **RocketMQ 事务消息**:
     *   确保 知识点入库、图谱更新、统计分析 等操作的数据一致性。
-    *   **流程**: Agent Service 确认知识点 -> 发送 Half Msg -> 扣减用户Token/记录Log (Local Tx) -> Commit Msg -> RAG Service 消费消息并写入 Neo4j/PGVector。
+    *   **流程**: Agent Service 确认知识点 -> 发送 Half Msg -> 扣减用户Token/记录Log (Local Tx) -> Commit Msg -> RAG Service 消费消息并写入 Milvus。
 
 ## 💡 核心业务流程 (Core Features)
 
@@ -92,8 +96,14 @@
 
 ### 1. 状态机 (State Machine)
 引入 FSM 管理复杂的"教学-总结-确认"流程，避免 Prompt 漂移。
-*   **States**: `IDLE`, `LEARNING`, `SUMMARIZING`, `CONFIRMING`, `RECORDING`.
-*   **Transitions**: 基于用户意图 (Intent Classification) 触发状态流转。
+*   **States**: 
+    *   `IDLE`: 空闲状态。
+    *   `TEACHING_EXPLAIN`: 概念讲解状态。
+    *   `TEACHING_QUIZ`: 互动提问状态。
+    *   `SUMMARIZING`: 知识总结状态。
+    *   `CONFIRMING`: 用户确认状态。
+    *   `RECORDING`: 知识入库状态。
+*   **Transitions**: 基于用户意图 (Intent Classification) 和对话轮次触发状态流转。
 
 ### 2. 事务消息流程 (RocketMQ)
 利用 RocketMQ 的 Transactional Message 特性：
@@ -111,7 +121,7 @@ KnowledgeAgentPlatform/
 ├── knowledge-agent-common/     # 公共模块：Utils, Constants, Base Classes
 ├── knowledge-agent-api/        # 接口模块：存放 Dubbo Interface (Service), DTOs, Enums
 ├── knowledge-agent-user/       # 用户服务 (Provider): MySQL, User Logic -> Implements UserService
-├── knowledge-agent-rag/        # RAG服务 (Provider): Neo4j, PGVector -> Implements RagService
+├── knowledge-agent-rag/        # RAG服务 (Provider): Milvus -> Implements RagService
 ├── knowledge-agent-core/       # Agent核心服务 (Provider): LLM, FSM, RocketMQ Producer -> Implements AgentService
 ├── knowledge-agent-gateway/    # 网关/Web层 (Consumer): Spring Boot Web, Controller, SSE -> Consumes Dubbo Services
 ├── pom.xml
