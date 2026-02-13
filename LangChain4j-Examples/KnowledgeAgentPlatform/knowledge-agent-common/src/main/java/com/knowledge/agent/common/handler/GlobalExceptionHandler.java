@@ -1,6 +1,6 @@
 package com.knowledge.agent.common.handler;
 
-import com.knowledge.agent.common.exception.BusinessException;
+import com.knowledge.agent.common.exception.BizException;
 import com.knowledge.agent.common.resp.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(value = BusinessException.class)
-    public Result<Void> handleBusinessException(BusinessException e) {
+    @ExceptionHandler(value = BizException.class)
+    public Result<Void> handleBusinessException(BizException e) {
         log.error("业务异常: code={}, msg={}", e.getCode(), e.getMessage());
         return Result.error(e.getCode(), e.getMessage());
     }
