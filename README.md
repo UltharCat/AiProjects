@@ -67,6 +67,16 @@ mvn -q -DskipTests spring-boot:run
 
 ## 模块导航与功能简介
 
+### LangChain4j
+
+- **KnowledgeAgentPlatform**：基于 LangChain4j + Spring Boot + Dubbo 构建的企业级智能知识助手平台。
+  - **核心特性**：
+    - **微服务架构**：基于 Dubbo Triple 协议拆分为 Gateway, User, Agent, RAG, Core 等模块。
+    - **双层记忆**：MySQL (事实与元数据) + Milvus (语义向量) + Redis (会话缓存)。
+    - **智能辅导**：结合 RAG 与 ReAct 状态机，提供深度知识问答与苏格拉底式教学。
+    - **科学记忆**：集成艾宾浩斯遗忘曲线算法，主动推送复习任务。
+  - README：`LangChain4j-Examples/KnowledgeAgentPlatform/README.md`
+
 ### SpringAi
 
 - **Ollama-Base**：最小 Ollama HTTP 转发示例（RestTemplate 调用 Ollama API）

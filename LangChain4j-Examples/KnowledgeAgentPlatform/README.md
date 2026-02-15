@@ -9,6 +9,16 @@
 2.  **动态成长**：Agent 角色随用户交互习惯动态进化，形成独特的性格与沟通方式。
 3.  **科学记忆**：结合**知识图谱**与**艾宾浩斯遗忘曲线**，主动管理用户的知识留存。
 
+## 🚧 当前进度 (Current Progress)
+
+截至 2026/02/15，项目开发进展如下：
+- [x] **基础设施**: Maven 多模块架构、MySQL 数据库及 Flyway 脚本。
+- [x] **API 定义**: 完成 `KnowledgeDTO`, `AgentService`, `RagService`, `UserService` 接口契约。
+- [x] **User Service**: 完成用户表设计、`SysUser` 实体及画像获取逻辑。
+- [x] **RAG Service**: 完成知识切片存储、Milvus 向量检索逻辑及 MySQL 知识卡片管理。
+- [ ] **Agent Service**: 正在开发中（核心状态机与 LLM 集成待实现）。
+- [ ] **Gateway**: 待完善。
+
 ## 🛠 技术栈 (Tech Stack)
 
 *   **Core Framework**: Spring Boot 3.2+ (JDK 21 虚拟线程 - Virtual Threads)

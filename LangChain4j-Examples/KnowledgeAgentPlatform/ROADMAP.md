@@ -9,13 +9,13 @@ oshi# 开发路线图：知识 Agent 平台 (Knowledge Agent Platform)
 **目标**: 搭建本地开发环境，确保微服务基础设施就绪。
 
 - [x] **项目结构**: 基于 Maven 多模块构建 (`common`, `api`, `user`, `core`, `rag`, `gateway`)。
-- [ ] **服务注册与配置中心 (Nacos)**:
+- [x] **服务注册与配置中心 (Nacos)**:
     - 部署 Nacos (Stand-alone/Cluster)。
     - namespace: `dev` / `prod`.
-- [ ] **数据存储设施**:
+- [x] **数据存储设施**:
     - **MySQL 8.0+**: 创建数据库 `knowledge_agent`。
     - **Flyway**: 
-      - `knowledge-agent-core`: 管理核心知识表 (`V1__init_rag_schema.sql`).
+      - `knowledge-agent-rag`: 管理核心知识表 (`V1__init_rag_schema.sql`).
       - `knowledge-agent-user`: 管理用户表 (`V1__init_user_schema.sql`).
     - **Redis 7.x**: 用于 Session 缓存。
     - **Milvus 2.4+**: 部署向量数据库 (Standalone)，端口 `19530`。
@@ -24,10 +24,10 @@ oshi# 开发路线图：知识 Agent 平台 (Knowledge Agent Platform)
 ## 🏗 第 1 阶段：核心契约 (API & Common)
 **目标**: 定义严格的接口契约，确保 Dubbo 服务间调用的类型安全。
 
-- [ ] **公共组件 (`knowledge-agent-common`)**:
+- [x] **公共组件 (`knowledge-agent-common`)**:
     - **统一响应**: `Result<T>` (int code, String message, T data).
     - **异常体系**: `BussinessException` (extends RuntimeException).
-- [ ] **API 定义 (`knowledge-agent-api`)**:
+- [x] **API 定义 (`knowledge-agent-api`)**:
     - **DTO 模型**:
         - `KnowledgeDto`:
             ```java
@@ -53,21 +53,21 @@ oshi# 开发路线图：知识 Agent 平台 (Knowledge Agent Platform)
 ## 👤 第 2 阶段：用户身份与画像 (User Service)
 **目标**: 建立用户体系，逻辑位于 `knowledge-agent-user` 模块。
 
-- [ ] **Mysql 表设计 (`sys_user`)**:
+- [x] **Mysql 表设计 (`sys_user`)**:
     - **脚本位置**: `knowledge-agent-user/src/main/resources/db/migration/V1__init_user_schema.sql`
     - **字段**:
         - `id`: BIGINT (PK)
         - `username`: VARCHAR(50)
         - `password_hash`: VARCHAR(100)
         - `learning_style`: VARCHAR(20) (Enum: SOCRATIC, DIRECT, ELABORATE) -> 偏好风格
-- [ ] **Service 实现**:
+- [x] **Service 实现**:
     - `UserServiceImpl`: 实现 `getProfile`，返回用户 ID 及 `learning_style`。
 
 ## 🧠 第 3 阶段：知识存储与 RAG 核心 (RAG Service)
 **目标**: 实现双层记忆更新策略。数据库连接至 `knowledge_agent`。
 
-- [ ] **MySQL 表结构 (`knowledge_card`)**:
-    - **脚本位置**: `knowledge-agent-core/src/main/resources/db/migration/V1__init_rag_schema.sql`
+- [x] **MySQL 表结构 (`knowledge_card`)**:
+    - **脚本位置**: `knowledge-agent-rag/src/main/resources/db/migration/V1__init_rag_schema.sql`
     - **必须字段**:
         - `id`: BIGINT (PK, Snowflake)
         - `question`: TEXT
@@ -78,14 +78,14 @@ oshi# 开发路线图：知识 Agent 平台 (Knowledge Agent Platform)
         - `next_review_date`: DATETIME
         - `tags`: JSON
         - `deleted`: TINYINT
-- [ ] **Milvus Schema**:
+- [x] **Milvus Schema**:
     - Collection: `knowledge_index`
     - Fields:
         - `id`: Int64 (Primary, Non-Auto, == MySQL ID)
         - `vector`: FloatVector (Dim 768)
         - `metadata`: VarChar (JSON String)
     - Index: `HNSW` (M=16, efConstruction=256), Metric: `COSINE`.
-- [ ] **RagService 业务逻辑**:
+- [x] **RagService 业务逻辑**:
     - **保存逻辑 (`saveKnowledge`)**:
         1. 检查相似度: `search(dto.question)` -> if score > 0.85 -> 视为更新。
         2. 若新增: MySQL Insert -> Milvus Insert.
@@ -124,7 +124,7 @@ oshi# 开发路线图：知识 Agent 平台 (Knowledge Agent Platform)
     - 将待复习 ID 存入 Redis List `user:review:list:{date}`。
     - 用户登录时，`ChatController` 读取 List 并通过 SSE 发送："今日有 5 个知识点需要复习"。
 
-## 🧭 第 8 阶段：未来演进 (Future Optimization)
+## 🧭 第 7 阶段：未来演进 (Future Optimization)
 *(此阶段为长期规划，不包含在 MVP 版本中)*
 
 - [ ] **知识文档增量更新**: 目前采用只增不更新的策略，接下来需要实现RAG知识文档的增量更新。
