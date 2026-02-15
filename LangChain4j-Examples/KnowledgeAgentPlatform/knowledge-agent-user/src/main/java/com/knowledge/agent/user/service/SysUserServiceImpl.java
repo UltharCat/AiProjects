@@ -51,7 +51,7 @@ public class SysUserServiceImpl implements UserService {
     public Result<String> getUserProfile(Long userId) {
         SysUser user = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getId, userId));
-        return Result.success(user != null && StrUtil.isBlankIfStr(user.getLearningStyle()) ? user.getLearningStyle() : "{}");
+        return Result.success(user != null && StrUtil.isNotBlank(user.getLearningStyle()) ? user.getLearningStyle() : "{}");
     }
 
 }

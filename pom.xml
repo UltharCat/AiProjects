@@ -50,8 +50,7 @@
         <spring-ai-alibaba.version>1.1.0.0-RC1</spring-ai-alibaba.version>
         <spring-ai-alibaba-extensions.version>1.1.0.0-RC1</spring-ai-alibaba-extensions.version>
         <!-- langchain4j -->
-        <langchain4j.version>1.9.1</langchain4j.version>
-        <langchain4j-community.version>1.9.1-beta17</langchain4j-community.version>
+        <langchain4j.version>1.11.0</langchain4j.version>
         <!-- rocketMQ -->
         <rocketmq.version>2.3.5</rocketmq.version>
     </properties>
@@ -131,14 +130,6 @@
                 <groupId>com.alibaba.cloud.ai</groupId>
                 <artifactId>spring-ai-alibaba-bom</artifactId>
                 <version>${spring-ai-alibaba.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <!-- langchain4j community BOM -->
-            <dependency>
-                <groupId>dev.langchain4j</groupId>
-                <artifactId>langchain4j-community-bom</artifactId>
-                <version>${langchain4j-community.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

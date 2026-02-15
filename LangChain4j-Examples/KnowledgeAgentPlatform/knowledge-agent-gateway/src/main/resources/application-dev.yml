@@ -1,0 +1,11 @@
+server:
+  port: 8080
+spring:
+  application:
+    name: knowledge-agent-gateway
+dubbo:
+  application:
+    name: knowledge-agent-gateway
+  registry:
+    address: nacos://localhost:8848?username=nacos&password=nacos
+    register-mode: instance
