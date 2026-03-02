@@ -12,7 +12,7 @@ public class ApplicationTest {
 
     @Test
     public void contextLoads() {
-        System.out.println("embeddingModel test: " + embeddingModel.embed("测试"));
+        System.out.println("embeddingModel test: " + embeddingModel.embed("测试" + Math.random()));
     }
 
 }

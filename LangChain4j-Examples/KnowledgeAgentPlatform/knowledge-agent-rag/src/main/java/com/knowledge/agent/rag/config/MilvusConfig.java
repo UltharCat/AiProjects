@@ -60,7 +60,7 @@ public class MilvusConfig {
         // 1. ID 字段 (Primary Key)
         schema.addField(AddFieldReq.builder()
                 .autoID(true)
-                .dataType(DataType.Float)
+                .dataType(DataType.Int64)
                 .isPrimaryKey(true)
                 .fieldName("id")
                 .description("主键ID，切片id")
@@ -70,6 +70,7 @@ public class MilvusConfig {
                 .dataType(DataType.VarChar)
                 .fieldName("text")
                 .description("知识文本内容")
+                .enableAnalyzer(true)
                 .build());
         // 3. Metadata Field (JSON)
         // 存储其他动态属性：title, source, tags, create_time 等
@@ -84,14 +85,14 @@ public class MilvusConfig {
                 .dataType(DataType.FloatVector)
                 .dimension(DIMENSION)
                 .fieldName("text_dense")
-                .description("文本密集向量")
+                .description("文本稠密向量")
                 .build());
         // 5.text_sparse Field 稀疏向量
         schema.addField(AddFieldReq.builder()
-                .dataType(DataType.FloatVector)
+                .dataType(DataType.SparseFloatVector)
                 .dimension(DIMENSION)
                 .fieldName("text_sparse")
-                .description("文本密集向量")
+                .description("文本稀疏向量")
                 .build());
         // 6.为text_sparse添加BM25函数，支持稀疏向量搜索
         schema.addFunction(CreateCollectionReq.Function.builder()
