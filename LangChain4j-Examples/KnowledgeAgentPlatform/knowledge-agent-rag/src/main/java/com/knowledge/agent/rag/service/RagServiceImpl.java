@@ -92,7 +92,7 @@ public class RagServiceImpl implements RagService {
      * @param dto
      */
     private void saveMilvusKnowledge(KnowledgeDTO dto) {
-        var metadata = Map.of(
+        Map<String, Object> metadata = Map.of(
                 "doc_id", dto.getId(),
                 "tags", JSON.toJSONString(dto.getTags())
         );
@@ -105,14 +105,15 @@ public class RagServiceImpl implements RagService {
         List<TextSegment> split = DocumentSplitters
                 .recursive(1000, 100) // 递归切割器，切割后文本长度不超过1000，重叠部分100
                 .split(knowledgeDoc);
+        Gson gson = new Gson();
         // 构造向量存储数据结构
         var rows = split.stream().map(textSegment -> {
             String text = textSegment.text();
             float[] vector = embeddingModel.embed(text).content().vector();
             JsonObject row = new JsonObject();
             row.addProperty("text", text);
-            row.add("text_dense", new Gson().toJsonTree(vector));
-            row.addProperty("metadata", JSON.toJSONString(metadata));
+            row.add("text_dense", gson.toJsonTree(vector));
+            row.add("metadata", gson.toJsonTree(metadata));
             return row;
         }).collect(Collectors.toList());
         // milvus向量存储
