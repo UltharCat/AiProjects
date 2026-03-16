@@ -17,7 +17,6 @@ import io.milvus.v2.service.vector.response.SearchResp;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class MilvusHybridRetriever implements ContentRetriever {
