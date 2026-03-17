@@ -27,12 +27,22 @@ public class MilvusHybridRetriever implements ContentRetriever {
 
     private final MilvusClientV2 milvusClientV2;
 
+    private final int topK;
+
     public MilvusHybridRetriever(String collectionName,
                                  EmbeddingModel embeddingModel,
                                  MilvusClientV2 milvusClientV2) {
+        this(collectionName, embeddingModel, milvusClientV2, 3);
+    }
+
+    public MilvusHybridRetriever(String collectionName,
+                                 EmbeddingModel embeddingModel,
+                                 MilvusClientV2 milvusClientV2,
+                                 int topK) {
         this.COLLECTION_NAME = collectionName;
         this.embeddingModel = embeddingModel;
         this.milvusClientV2 = milvusClientV2;
+        this.topK = Math.max(1, topK);
     }
 
     @Override
@@ -46,20 +56,19 @@ public class MilvusHybridRetriever implements ContentRetriever {
                         AnnSearchReq.builder()
                                 .vectorFieldName("text_dense")
                                 .vectors(queryVec)
-                                .params("{\"ef\": 10}") // 密集向量参数，控制密集向量的搜索效果和效率，ef值越大搜索结果越准确但速度越慢
-                                .topK(2)
+                                .params("{\"ef\": 10}")
+                                .topK(topK)
                                 .build(),
                         AnnSearchReq.builder()
                                 .vectorFieldName("text_sparse")
                                 .vectors(queryVec)
-                                .params("{\"drop_ratio_search\": 0.2}") // 稀疏向量参数，控制稀疏向量的搜索结果占比，0.2表示舍弃20%的稀疏向量搜索结果，保留80%的密集向量搜索结果
-                                .topK(2)
+                                .params("{\"drop_ratio_search\": 0.2}")
+                                .topK(topK)
                                 .build()
                 ))
                 .ranker(new RRFRanker(60))
                 .outFields(List.of("text", "metadata"))
                 .build();
-        // 因为只做了一次查询，所以直接获取第一个搜索结果列表
         List<SearchResp.SearchResult> results = this.milvusClientV2.hybridSearch(searchReq).getSearchResults().getFirst();
         return results.stream()
                 .<Content>mapMulti((r, consumer) -> {
@@ -73,7 +82,6 @@ public class MilvusHybridRetriever implements ContentRetriever {
                         if (metadata == null) return;
                         consumer.accept(Content.from(TextSegment.from(text, Metadata.from(metadata))));
                     } catch (Exception ignored) {
-                        // 出错则不输出该项
                     }
                 })
                 .collect(Collectors.toList());

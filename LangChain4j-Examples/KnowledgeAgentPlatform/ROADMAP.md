@@ -1,60 +1,60 @@
 # Knowledge Agent Platform Roadmap
 
-本路线图基于当前代码、配置与可编译结果校准，不以 README 中的愿景描述作为完成依据。
+This roadmap is calibrated against the current code, configuration, and verification results rather than vision-only descriptions.
 
-> 扫描日期：2026-03-17  
-> 项目目录：`F:\JavaProjects\AiProjects\LangChain4j-Examples\KnowledgeAgentPlatform`  
-> 构建结论：`mvn -DskipTests compile` 通过  
-> 测试结论：`mvn test` 受本地 `Nacos`/外部依赖未启动影响，不能作为功能完成判定依据
+> Scan date: 2026-03-17  
+> Project path: `F:\JavaProjects\AiProjects\LangChain4j-Examples\KnowledgeAgentPlatform`  
+> Build result: `mvn -DskipTests compile` passed  
+> Verification note: full `mvn test` still depends on local `Nacos` and external services, so targeted tests are used to validate newly implemented behavior
 
-## 状态说明
+## Status Legend
 
-- `[x] 已完成`：代码、配置或脚本已存在，且可在仓库中定位到实现依据
-- `[-] 部分完成`：已有局部实现或底座，但尚未形成完整对外能力
-- `[ ] 待实现`：已有明确方向，但当前仓库中没有完成实现
-- `[~] 延期观察`：保留为中长期能力，不作为近期主线
+- `[x] Done`: implementation exists in code/config/scripts and can be located in the repository
+- `[-] Partial`: a working foundation exists, but the feature is not yet production-complete
+- `[ ] Planned`: no complete implementation yet
+- `[~] Deferred`: intentionally postponed from the near-term delivery path
 
-## 总体目标
+## Goal
 
-围绕“知识辅导 -> 知识沉淀 -> 复习调度”构建学习型 Knowledge Agent 平台，先打通服务化 MVP，再逐步演进到完整 Agent Core 与 Review 闭环。
+Build a learning-oriented Knowledge Agent platform around the main loop of `teaching -> knowledge capture -> review scheduling`, landing a service-oriented MVP first and then strengthening orchestration and automation.
 
-## 主流程与节点
+## Main Flows
 
-### 对话主链路
+### Conversation Flow
 
-`输入接入` -> `身份与用户画像` -> `意图判断` -> `状态选择(IDLE/TEACHING/REVIEW/SUMMARY)` -> `知识检索` -> `LLM/Tool 执行` -> `结果返回` -> `可选知识归档`
+`Input` -> `Identity and profile` -> `Intent detection` -> `State selection (IDLE/TEACHING/REVIEW/SUMMARY)` -> `Knowledge retrieval` -> `Tool/LLM execution` -> `Response` -> `Optional archival`
 
-### 知识归档链路
+### Knowledge Archival Flow
 
-`总结文本` -> `文本清洗` -> `切片` -> `Embedding` -> `Milvus 入库` -> `KnowledgeCard 初始化` -> `标签/来源元数据`
+`Summary text` -> `Cleaning` -> `Chunking` -> `Embedding` -> `Milvus insert` -> `KnowledgeCard upsert` -> `Tags and metadata`
 
-### 复习链路
+### Review Flow
 
-`登录或定时触发` -> `筛选 next_review_date 到期卡片` -> `生成复习列表` -> `Agent 提问` -> `质量评分(0..5)` -> `SM-2 更新` -> `提醒去重`
+`Login or scheduler trigger` -> `Due card query` -> `Review list generation` -> `Agent question` -> `Quality score (0..5)` -> `SM-2 update` -> `Deduplication`
 
-### 事件流策略
+### Event Strategy
 
-- MVP 阶段：优先同步 Dubbo 调用，先让主链路跑通
-- 稳定阶段：将知识归档、复习提醒、统计事件迁移到 RocketMQ 异步化
+- MVP stage: synchronous Dubbo calls first
+- Stabilization stage: move archival, reminders, and analytics to RocketMQ-based async events
 
-## Phase 0：基础工程与依赖基线
+## Phase 0: Foundation and Runtime Baseline
 
-- [x] Maven 多模块结构：`common/api/user/rag/core/gateway`
-- [x] `knowledge-agent-user` Flyway 初始化脚本
-- [x] `knowledge-agent-rag` Flyway 初始化脚本
-- [x] `user/rag/gateway` 基础 Spring/Dubbo/Nacos 配置
-- [x] Milvus Collection 初始化与 dense/sparse 字段定义
-- [x] `docker-compose.yml` 依赖编排骨架：Nacos/Redis/MySQL/RocketMQ
-- [ ] `knowledge-agent-core` 配置资源文件
-- [ ] Redis 连接配置与缓存接入
-- [ ] RocketMQ Topic 定义、生产者与消费者落地
+- [x] Multi-module Maven structure: `common/api/user/rag/core/gateway`
+- [x] `knowledge-agent-user` Flyway initialization
+- [x] `knowledge-agent-rag` Flyway initialization
+- [x] Base Spring/Dubbo/Nacos config for `user/rag/gateway`
+- [x] Base runtime config for `knowledge-agent-core`
+- [x] Milvus collection initialization with dense/sparse schema
+- [x] `docker-compose.yml` baseline for Nacos/Redis/MySQL/RocketMQ
+- [ ] Redis connection and cache integration
+- [ ] RocketMQ topics, producer, and consumer wiring
 
-完成判定：
+Completion criteria:
 
-- `[x]` 项必须能在仓库文件中直接定位
-- `Phase 0` 完成需要 `core` 具备最小可启动配置，且 Redis/RocketMQ 至少完成基础接入
+- Items marked `[x]` must be backed by files in the repository
+- Phase 0 is considered complete only when Redis and RocketMQ also have working baseline integrations
 
-## Phase 1：公共契约与通用能力
+## Phase 1: Shared Contracts and Common Utilities
 
 - [x] `Result`
 - [x] `BizException`
@@ -66,158 +66,168 @@
 - [x] `AgentService`
 - [x] `RagService`
 - [x] `UserService`
-- [ ] 契约测试
-- [ ] 统一错误码/状态码规范
+- [ ] Contract tests across service boundaries
+- [ ] Unified error/status code conventions
 
-完成判定：
+Completion criteria:
 
-- 公共类型和接口均有源码定义
-- 后续要把“契约已定义但无实现”和“代码已实现”继续在文档中分开维护
+- Shared types and interfaces are present in source form
+- Contract-level tests still need to be added before this phase is fully hardened
 
-## Phase 2：User Service
+## Phase 2: User Service
 
-- [x] `sys_user` 表结构
-- [x] `SysUser` 实体与 `SysUserMapper`
+- [x] `sys_user` schema
+- [x] `SysUser` entity and `SysUserMapper`
 - [x] `login`
 - [x] `getUserProfile`
-- [ ] JWT 鉴权
-- [ ] 登录态模型
-- [ ] `UserController` 实际接口
-- [ ] 用户偏好扩展模型
+- [ ] JWT-based authentication
+- [ ] Login session model
+- [ ] Real `UserController` endpoints
+- [ ] Expanded user preference model
 
-完成判定：
+Completion criteria:
 
-- 当前仅能说明 Dubbo Provider 级别能力已存在
-- 要判定本阶段真正完成，还需要补齐对外入口、鉴权和稳定登录态
+- Dubbo provider capabilities exist
+- External auth and stable session handling are still missing
 
-## Phase 3：RAG Service
+## Phase 3: RAG Service
 
-- [x] `knowledge_card` 表结构
-- [x] `KnowledgeCard` 实体与 Mapper
-- [x] Milvus hybrid schema 初始化
-- [x] dense + sparse + RRF 检索底座
+- [x] `knowledge_card` schema
+- [x] `KnowledgeCard` entity and mapper
+- [x] Milvus hybrid schema initialization
+- [x] Dense + sparse + RRF retrieval foundation
 - [x] `saveKnowledge`
 - [x] `updateReviewStatus`
-- [-] 内部已有混合检索能力，但未暴露标准 `search/recall` API
-- [ ] 文档导入管道
-- [ ] 标签过滤
-- [ ] 引用返回
-- [ ] 直答策略
-- [ ] 批处理导入
+- [x] Standard search API foundation: `searchKnowledge`
+- [x] Review query foundation: `listPendingReviews`
+- [-] Knowledge card metadata has been expanded with `userId/summary/tags`, but citation/source response structure is still missing
+- [ ] Document import pipeline
+- [ ] Tag filtering strategy
+- [ ] Citation/source return payload
+- [ ] Direct-answer strategy
+- [ ] Batch import tooling
 
-完成判定：
+Completion criteria:
 
-- 当前已完成“归档写入 + 复习参数更新 + 检索底座”
-- 只有补齐标准检索接口和导入流水线后，才能认为 RAG 服务完成对话型 Agent 的知识供给职责
+- The service now covers archival write, review status update, search, and pending-review query
+- RAG is not considered complete until import, citation/source output, and richer retrieval response contracts are finished
 
-## Phase 4：Agent Core MVP
+## Phase 4: Agent Core MVP
 
-- [ ] `ConversationState` 状态模型
-- [ ] `StateContext` 会话上下文
-- [ ] Prompt 装配
-- [ ] LangChain4j Tool 路由
-- [ ] `AgentService` Provider 实现
-- [ ] User/RAG Dubbo 联动
-- [ ] 会话记忆持久化
+- [x] `ConversationState`
+- [x] `StateContext`
+- [x] Prompt assembly service
+- [-] Tool routing foundation via `AgentToolRouter` and Dubbo orchestration
+- [x] `AgentService` provider implementation
+- [x] User/RAG Dubbo integration
+- [-] Session memory store implemented in-memory; durable persistence is still pending
+- [-] Rule-based state transitions are working, but real LangChain4j model execution is still pending
 
-完成判定：
+Completion criteria:
 
-- 至少实现 `chat` 主链路
-- 至少支持 `IDLE/TEACHING/REVIEW/SUMMARY` 基本状态切换
-- 至少完成一次 `UserProfile + RAG + LLM/Tool` 的闭环调用
+- `chat` is implemented and reachable through Dubbo
+- Base states `IDLE/TEACHING/REVIEW/SUMMARY` are supported
+- User profile + RAG + response orchestration is closed-loop for the MVP path
+- This phase remains partial until real model/tool execution and durable memory are added
 
-## Phase 5：Gateway / BFF
+## Phase 5: Gateway / BFF
 
-- [-] 启动类与基础配置已存在
-- [ ] HTTP Controller
-- [ ] SSE 流式响应
-- [ ] 统一鉴权
-- [ ] Agent/User/RAG 路由聚合
-- [ ] 对外 API 文档
+- [x] Startup class and base config
+- [x] HTTP controllers
+- [x] Minimal SSE endpoint
+- [x] Agent/User/RAG route aggregation
+- [-] Authentication is still pass-through login only, not unified request auth
+- [ ] External API documentation
 
-完成判定：
+Completion criteria:
 
-- 当前只能视为壳模块
-- 本阶段完成的标准是存在真实对外入口，并能稳定承接登录、对话、复习三个场景
+- Gateway is no longer just a shell module
+- This phase remains partial until unified auth and API documentation are in place
 
-## Phase 6：Review 调度闭环
+## Phase 6: Review Scheduling Loop
 
-- [ ] 到期复习卡片查询
-- [ ] `ReviewTask` 模型
-- [ ] 登录触发复习提醒
-- [ ] 定时调度生成复习列表
-- [ ] Redis 队列或去重缓存
-- [ ] Agent 主动提问
-- [ ] 复习结果回写
+- [x] Due review card query
+- [ ] `ReviewTask` model
+- [ ] Login-triggered review reminder
+- [ ] Scheduled review list generation
+- [ ] Redis queue or dedup cache
+- [x] Agent-driven review questioning within the conversation flow
+- [x] Review result write-back
 
-完成判定：
+Completion criteria:
 
-- 用户登录或定时任务能够稳定拉起复习流程
-- 同一知识点具备去重控制
-- 评分结果能够回写 `knowledge_card` 并更新下次复习时间
+- The conversational review loop exists for manually triggered review sessions
+- This phase remains incomplete until login/scheduler triggers and deduplication are implemented
 
-## Phase 7：增强能力与长期方向
+## Phase 7: Enhancements and Long-Term Direction
 
-- [~] 知识图谱
-- [~] 多模态生成
-- [~] 动态角色进化
-- [~] 复杂工作流编排
-- [~] RocketMQ 全异步事件化
+- [~] Knowledge graph
+- [~] Multimodal generation
+- [~] Dynamic persona evolution
+- [~] Complex workflow orchestration
+- [~] Fully event-driven RocketMQ architecture
 
-完成判定：
+Completion criteria:
 
-- 这些能力不应阻塞主线 MVP
-- 只有在 Agent Core、Gateway、Review 闭环稳定后才进入优先级上升区
+- These items must not block the MVP path
+- They stay deferred until Agent Core, Gateway, and Review flow are stable
 
-## 文档中的接口分层规则
+## Interface Layering Rules
 
-### 代码已存在
+### Implemented in Code
 
 - `UserService.login`
 - `UserService.getUserProfile`
 - `RagService.saveKnowledge`
 - `RagService.updateReviewStatus`
+- `RagService.searchKnowledge`
+- `RagService.listPendingReviews`
+- `AgentService.chat`
+- `AgentService.switchState`
 - `KnowledgeDTO`
 - `ChatRequest`
 - `UserLoginRequest`
-
-### 契约已定义但无实现
-
-- `AgentService.chat`
-- `AgentService.switchState`
-
-### 仅规划中
-
-- Gateway HTTP/SSE 对外接口
 - `ConversationState`
 - `StateContext`
+- Gateway HTTP endpoints
+- Gateway SSE endpoint
+
+### Defined but Still Partial
+
+- `AgentToolRouter`
+- In-memory session memory
+- Review flow inside conversational sessions
+
+### Planned Only
+
 - `ReviewTask`
 - `ReminderEvent`
-- citation/source/direct-answer 检索响应结构
+- Citation/source/direct-answer response schema
+- Unified authentication contract for Gateway
 
-## 下一阶段实施顺序
+## Next Implementation Order
 
-1. Agent Core MVP
-2. Gateway / BFF
-3. Review 调度闭环
-4. 增强能力
+1. Complete Gateway auth and external API documentation
+2. Complete review triggers, scheduling, and deduplication
+3. Replace rule-based Agent orchestration with real LangChain4j model/tool execution
+4. Keep Phase 7 deferred
 
-排序原因：
+Rationale:
 
-- 当前最缺的是对话主链路闭环，而不是更多基础设施
-- Gateway 的价值依赖 Agent Core 可用
-- Review 闭环依赖 Agent 与 RAG 先形成统一调用路径
-- 图谱、多模态、复杂工作流不应提前消耗主线资源
+- The MVP path is now available end-to-end, so the highest-value gaps are hardening and automation
+- Review triggering still lacks scheduler/login integration
+- Agent Core still needs true model execution, but Phase 7 should remain out of scope for now
 
-## 当前完成依据速查
+## Current Evidence Pointers
 
-- User 侧依据：`SysUser`、`SysUserMapper`、`SysUserServiceImpl`、用户 Flyway 脚本
-- RAG 侧依据：`KnowledgeCard`、`KnowledgeCardMapper`、`RagServiceImpl`、`MilvusConfig`、RAG Flyway 脚本
-- 公共契约依据：`knowledge-agent-api` 与 `knowledge-agent-common`
-- 壳模块依据：`KnowledgeAgentCoreApplication`、`KnowledgeAgentGatewayApplication`
+- User side: `SysUser`, `SysUserMapper`, `SysUserServiceImpl`, user Flyway script
+- RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`
+- Agent Core side: `ConversationState`, `StateContext`, `AgentServiceImpl`, `AgentPromptService`, `DubboAgentToolRouter`
+- Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`
+- Verification: targeted tests `AgentServiceImplTest` and `GatewayAgentControllerTest`
 
-## 维护规则
+## Maintenance Rules
 
-- 以后只有在代码、配置、脚本或验证结果能支撑时，才允许把步骤改成 `[x]`
-- 愿景、方案设计、README 描述不能直接作为 roadmap 的完成依据
-- 每次更新 roadmap 时，都要同步检查“代码已存在 / 契约已定义但无实现 / 仅规划中”三层边界是否仍然准确
+- Mark `[x]` only when code/config/scripts or verification results support it
+- Do not treat roadmap ideas or README narratives as proof of completion
+- Re-check the three layers `implemented / partial / planned` whenever roadmap status is updated

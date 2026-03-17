@@ -4,11 +4,12 @@ import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.StrUtil;
 import com.alibaba.fastjson.JSON;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.knowledge.agent.api.dto.KnowledgeDTO;
 import com.knowledge.agent.api.service.RagService;
+import com.knowledge.agent.common.exception.BizException;
 import com.knowledge.agent.common.resp.Result;
 import com.knowledge.agent.common.utils.EbbinghausUtils;
 import com.knowledge.agent.rag.config.MilvusHybridRetriever;
@@ -30,7 +31,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -39,12 +47,10 @@ import java.util.stream.Collectors;
 public class RagServiceImpl implements RagService {
 
     @Value("${milvus.cloud.collection-name}")
-    private String COLLECTION_NAME;
+    private String collectionName;
 
     private final EmbeddingModel embeddingModel;
-
     private final MilvusClientV2 milvusClientV2;
-
     private final KnowledgeCardMapper knowledgeCardMapper;
 
     public RagServiceImpl(EmbeddingModel embeddingModel,
@@ -58,57 +64,41 @@ public class RagServiceImpl implements RagService {
     @Override
     @Transactional
     public Result<Boolean> saveKnowledge(KnowledgeDTO dto) {
-        // 1.参数校验
         if (dto == null || StrUtil.isBlank(dto.getSummary())) {
-            return Result.error(400, "无效的知识数据");
+            return Result.error(400, "Invalid knowledge payload");
         }
-        // 已有知识检索
-        List<Content> retrieve = new MilvusHybridRetriever(COLLECTION_NAME, embeddingModel, milvusClientV2)
+
+        List<Content> retrieve = new MilvusHybridRetriever(collectionName, embeddingModel, milvusClientV2, 2)
                 .retrieve(Query.from(dto.getSummary()));
         if (CollUtil.isNotEmpty(retrieve)) {
-            // 检索到相关知识，则将本次总结内容添加入相关知识文档下
-            Set<Long> docIds = retrieve.stream().map(content-> content.textSegment().metadata().getLong("doc_id")).collect(Collectors.toSet());
-            docIds.forEach(id -> {
+            Set<Long> docIds = retrieve.stream()
+                    .map(content -> content.textSegment().metadata().getLong("doc_id"))
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            for (Long id : docIds) {
                 dto.setId(id);
                 saveMilvusKnowledge(dto);
-            });
+                upsertKnowledgeCard(dto);
+            }
         } else {
-            // 生成文档id
             dto.setId(IdUtil.getSnowflakeNextId());
-            // 保存milvus新知识
             saveMilvusKnowledge(dto);
-            // 保存mysql复习记录
-            knowledgeCardMapper.insert(
-                    KnowledgeCard.builder()
-                            .docId(dto.getId())
-                            .build()
-            );
+            upsertKnowledgeCard(dto);
         }
         return Result.success(Boolean.TRUE);
     }
 
-    /**
-     * 保存知识到Milvus
-     * @param dto
-     */
     private void saveMilvusKnowledge(KnowledgeDTO dto) {
-        Map<String, Object> metadata = Map.of(
-                "doc_id", dto.getId(),
-                "tags", JSON.toJSONString(dto.getTags())
-        );
-        // 文本切割
-        Document knowledgeDoc = Document.from(
-                dto.getSummary(),
-                Metadata.from(metadata)
-        );
-        // 文本向量化
-        List<TextSegment> split = DocumentSplitters
-                .recursive(1000, 100) // 递归切割器，切割后文本长度不超过1000，重叠部分100
-                .split(knowledgeDoc);
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("doc_id", dto.getId());
+        metadata.put("user_id", dto.getUserId());
+        metadata.put("tags", JSON.toJSONString(dto.getTags()));
+
+        Document knowledgeDoc = Document.from(dto.getSummary(), Metadata.from(metadata));
+        List<TextSegment> segments = DocumentSplitters.recursive(1000, 100).split(knowledgeDoc);
         Gson gson = new Gson();
-        // 构造向量存储数据结构
-        var rows = split.stream().map(textSegment -> {
-            String text = textSegment.text();
+        var rows = segments.stream().map(segment -> {
+            String text = segment.text();
             float[] vector = embeddingModel.embed(text).content().vector();
             JsonObject row = new JsonObject();
             row.addProperty("text", text);
@@ -116,27 +106,136 @@ public class RagServiceImpl implements RagService {
             row.add("metadata", gson.toJsonTree(metadata));
             return row;
         }).collect(Collectors.toList());
-        // milvus向量存储
-        milvusClientV2.insert(InsertReq.builder().collectionName(COLLECTION_NAME).data(rows).build());
+        milvusClientV2.insert(InsertReq.builder().collectionName(collectionName).data(rows).build());
+    }
+
+    private void upsertKnowledgeCard(KnowledgeDTO dto) {
+        KnowledgeCard entity = KnowledgeCard.builder()
+                .docId(dto.getId())
+                .userId(dto.getUserId())
+                .summary(dto.getSummary())
+                .tagsJson(dto.getTags() == null ? null : JSON.toJSONString(dto.getTags()))
+                .easinessFactor(dto.getEasinessFactor() != null ? dto.getEasinessFactor() : 2.5d)
+                .intervalDays(dto.getIntervalDays() != null ? dto.getIntervalDays() : 1)
+                .repetition(dto.getRepetition() != null ? dto.getRepetition() : 0)
+                .nextReviewDate(dto.getNextReviewDate() != null ? dto.getNextReviewDate() : LocalDate.now().plusDays(1).atStartOfDay())
+                .build();
+        KnowledgeCard existing = knowledgeCardMapper.selectById(dto.getId());
+        if (existing == null) {
+            knowledgeCardMapper.insert(entity);
+        } else {
+            knowledgeCardMapper.updateById(entity);
+        }
     }
 
     @Override
     @Transactional
     public Result<Void> updateReviewStatus(Long id, int quality) {
-        // 查询已有知识卡片
-        KnowledgeCard card = knowledgeCardMapper.selectOne(new LambdaQueryWrapper<KnowledgeCard>()
-                .eq(KnowledgeCard::getDocId, id));
-        // 计算艾宾浩斯参数
-        EbbinghausUtils.ReviewResult compute = EbbinghausUtils.compute(quality, card.getEasinessFactor(), card.getIntervalDays(), card.getRepetition(), LocalDate.now());
-        // 更新复习状态
+        KnowledgeCard card = knowledgeCardMapper.selectById(id);
+        if (card == null) {
+            throw new BizException(404, "Knowledge card not found");
+        }
+
+        EbbinghausUtils.ReviewResult compute = EbbinghausUtils.compute(
+                quality,
+                card.getEasinessFactor(),
+                card.getIntervalDays(),
+                card.getRepetition(),
+                LocalDate.now()
+        );
         knowledgeCardMapper.updateById(
                 KnowledgeCard.builder()
                         .docId(id)
                         .easinessFactor(compute.newEf())
                         .intervalDays(compute.newInterval())
+                        .repetition(compute.newRepetitions())
                         .nextReviewDate(compute.nextReviewDate().atStartOfDay())
                         .build()
         );
         return Result.success(null);
+    }
+
+    @Override
+    public Result<List<KnowledgeDTO>> searchKnowledge(Long userId, String query, Integer limit) {
+        if (StrUtil.isBlank(query)) {
+            return Result.success(Collections.emptyList());
+        }
+        int size = limit == null ? 3 : Math.max(1, limit);
+        List<Content> retrieve = new MilvusHybridRetriever(collectionName, embeddingModel, milvusClientV2, size)
+                .retrieve(Query.from(query));
+        if (CollUtil.isEmpty(retrieve)) {
+            return Result.success(Collections.emptyList());
+        }
+
+        Map<Long, Integer> rankMap = new HashMap<>();
+        Map<Long, String> textMap = new HashMap<>();
+        for (Content content : retrieve) {
+            Long docId = content.textSegment().metadata().getLong("doc_id");
+            if (docId == null || rankMap.containsKey(docId)) {
+                continue;
+            }
+            rankMap.put(docId, rankMap.size());
+            textMap.put(docId, content.textSegment().text());
+        }
+        if (rankMap.isEmpty()) {
+            return Result.success(Collections.emptyList());
+        }
+
+        Map<Long, KnowledgeCard> cardMap = knowledgeCardMapper.selectList(
+                        Wrappers.<KnowledgeCard>lambdaQuery()
+                                .in(KnowledgeCard::getDocId, rankMap.keySet())
+                                .eq(userId != null, KnowledgeCard::getUserId, userId)
+                ).stream()
+                .collect(Collectors.toMap(KnowledgeCard::getDocId, card -> card));
+
+        List<KnowledgeDTO> result = rankMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByValue())
+                .map(entry -> toKnowledgeDTO(cardMap.get(entry.getKey()), entry.getKey(), textMap.get(entry.getKey()), entry.getValue()))
+                .filter(Objects::nonNull)
+                .limit(size)
+                .toList();
+        return Result.success(result);
+    }
+
+    @Override
+    public Result<List<KnowledgeDTO>> listPendingReviews(Long userId, Integer limit) {
+        int size = limit == null ? 5 : Math.max(1, limit);
+        List<KnowledgeDTO> data = knowledgeCardMapper.selectList(
+                        Wrappers.<KnowledgeCard>lambdaQuery()
+                                .eq(userId != null, KnowledgeCard::getUserId, userId)
+                                .eq(KnowledgeCard::getDeleted, 0)
+                                .and(wrapper -> wrapper.isNull(KnowledgeCard::getNextReviewDate)
+                                        .or()
+                                        .le(KnowledgeCard::getNextReviewDate, LocalDateTime.now()))
+                                .orderByAsc(KnowledgeCard::getNextReviewDate)
+                                .last("limit " + size)
+                ).stream()
+                .map(card -> toKnowledgeDTO(card, card.getDocId(), card.getSummary(), null))
+                .toList();
+        return Result.success(data);
+    }
+
+    private KnowledgeDTO toKnowledgeDTO(KnowledgeCard card, Long docId, String fallbackSummary, Integer rankIndex) {
+        if (card == null && StrUtil.isBlank(fallbackSummary)) {
+            return null;
+        }
+        return KnowledgeDTO.builder()
+                .id(docId)
+                .userId(card == null ? null : card.getUserId())
+                .summary(card != null && StrUtil.isNotBlank(card.getSummary()) ? card.getSummary() : fallbackSummary)
+                .tags(parseTags(card == null ? null : card.getTagsJson()))
+                .score(rankIndex == null ? null : 1d / (rankIndex + 1))
+                .easinessFactor(card == null ? null : card.getEasinessFactor())
+                .intervalDays(card == null ? null : card.getIntervalDays())
+                .repetition(card == null ? null : card.getRepetition())
+                .nextReviewDate(card == null ? null : card.getNextReviewDate())
+                .build();
+    }
+
+    private Set<String> parseTags(String tagsJson) {
+        if (StrUtil.isBlank(tagsJson)) {
+            return Collections.emptySet();
+        }
+        return new LinkedHashSet<>(JSON.parseArray(tagsJson, String.class));
     }
 }

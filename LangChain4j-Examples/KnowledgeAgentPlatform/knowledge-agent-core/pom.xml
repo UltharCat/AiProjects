@@ -10,40 +10,38 @@
     <artifactId>knowledge-agent-core</artifactId>
 
     <dependencies>
-        <!-- 1.内部依赖 -->
+        <dependency>
+            <groupId>com.knowledge.agent</groupId>
+            <artifactId>knowledge-agent-common</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.knowledge.agent</groupId>
             <artifactId>knowledge-agent-api</artifactId>
         </dependency>
-        <!-- 2.web&dubbo -->
         <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-spring-boot-starter</artifactId>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>org.apache.dubbo</groupId>
             <artifactId>dubbo-registry-nacos</artifactId>
         </dependency>
-        <!-- 3.版本管理 flyway -->
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
         </dependency>
-        <!-- 4.大模型 LangChain4j Dependencies -->
         <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-google-ai-gemini</artifactId>
         </dependency>
-         <dependency>
+        <dependency>
             <groupId>dev.langchain4j</groupId>
             <artifactId>langchain4j-open-ai</artifactId>
         </dependency>
-        <!-- 5.消息通信 rocketmq -->
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-spring-boot-starter</artifactId>
         </dependency>
-        <!-- 6.数据库 ORM Mybatis-Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
@@ -52,6 +50,11 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

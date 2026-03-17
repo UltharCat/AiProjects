@@ -3,25 +3,30 @@ package com.knowledge.agent.api.service;
 import com.knowledge.agent.api.dto.KnowledgeDTO;
 import com.knowledge.agent.common.resp.Result;
 
+import java.util.List;
 
 /**
- * 知识存储与 RAG 核心服务
- * Dubbo 接口
+ * Dubbo contract for knowledge storage and retrieval.
  */
 public interface RagService {
 
     /**
-     * 保存知识点 (包含了 MySQL 存本体和 Milvus 存向量的双写逻辑)
-     * @param dto 知识传输对象
-     * @return 是否成功
+     * Save knowledge into both persistent metadata storage and vector storage.
      */
     Result<Boolean> saveKnowledge(KnowledgeDTO dto);
 
     /**
-     * 更新艾宾浩斯复习状态 (不涉及向量更新，只更新 MySQL)
-     * @param id 知识点ID
-     * @param quality 回忆质量 0..5
-     * @return void
+     * Update review status using SM-2 feedback.
      */
     Result<Void> updateReviewStatus(Long id, int quality);
+
+    /**
+     * Search relevant knowledge for a user.
+     */
+    Result<List<KnowledgeDTO>> searchKnowledge(Long userId, String query, Integer limit);
+
+    /**
+     * List pending review items for a user.
+     */
+    Result<List<KnowledgeDTO>> listPendingReviews(Long userId, Integer limit);
 }

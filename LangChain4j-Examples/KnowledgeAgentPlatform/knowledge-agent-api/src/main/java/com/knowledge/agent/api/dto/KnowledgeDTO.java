@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
- * 知识点核心传输对象
- * 用于 Agent 与 RAG 模块之间的数据交互
+ * Core knowledge transfer object shared between Agent and RAG modules.
  */
 @Data
 @Builder
@@ -20,39 +19,47 @@ public class KnowledgeDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 向量ID (关联 Milvus 中的向量记录，代表切片后的知识点)
+     * Vector document id associated with Milvus content.
      */
     private Long id;
 
     /**
-     * 对话知识总结
+     * Owner user id.
+     */
+    private Long userId;
+
+    /**
+     * Summarized knowledge content.
      */
     private String summary;
 
     /**
-     * 标签集合 (用于混合检索或过滤)
+     * Tags used for retrieval or filtering.
      */
     private Set<String> tags;
 
-    // --- 艾宾浩斯记忆参数 ---
+    /**
+     * Retrieval score for ranked results.
+     */
+    private Double score;
 
     /**
-     * 难度因子 (Easiness Factor)，默认 2.5
+     * Easiness factor used by the SM-2 algorithm.
      */
     private Double easinessFactor;
 
     /**
-     * 复习间隔天数
+     * Review interval in days.
      */
     private Integer intervalDays;
 
     /**
-     * 已复习次数
+     * Review repetition count.
      */
     private Integer repetition;
 
     /**
-     * 下次复习时间
+     * Scheduled time for the next review.
      */
     private LocalDateTime nextReviewDate;
 }

@@ -11,8 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 知识记忆卡片表
- * 对应 MySQL 表: knowledge_card
+ * Persistent review card mapped to the knowledge_card table.
  */
 @Data
 @Builder
@@ -23,42 +22,52 @@ public class KnowledgeCard implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 文档ID (关联 Milvus 中的向量记录)
+     * Document id associated with vector records.
      */
     @TableId(type = IdType.INPUT)
     private Long docId;
 
-    // --- 艾宾浩斯算法参数 ---
+    /**
+     * Owner user id.
+     */
+    private Long userId;
 
     /**
-     * 难度因子 (Easiness Factor)
-     * 范围通常在 1.3 - 2.5 之间
+     * Normalized knowledge summary.
+     */
+    private String summary;
+
+    /**
+     * Tags encoded as JSON.
+     */
+    private String tagsJson;
+
+    /**
+     * SM-2 easiness factor.
      */
     private Double easinessFactor;
 
     /**
-     * 复习间隔 (天)
+     * Review interval in days.
      */
     private Integer intervalDays;
 
     /**
-     * 重复次数 (成功复习的次数)
+     * Number of successful repetitions.
      */
     private Integer repetition;
 
     /**
-     * 下次复习截止时间
+     * Next review timestamp.
      */
     private LocalDateTime nextReviewDate;
-
-    // --- 元数据 ---
 
     private LocalDateTime createTime;
 
     private LocalDateTime updateTime;
 
     /**
-     * 逻辑删除标识
+     * Logical delete flag.
      */
     private Integer deleted;
 }

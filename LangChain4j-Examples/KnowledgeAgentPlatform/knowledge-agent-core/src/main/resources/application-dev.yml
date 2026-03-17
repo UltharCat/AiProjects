@@ -1,0 +1,14 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: knowledge-agent-core
+dubbo:
+  application:
+    name: knowledge-agent-core
+  protocol:
+    name: tri
+    port: 50053
+  registry:
+    address: nacos://localhost:8848?username=nacos&password=nacos
+    register-mode: instance
