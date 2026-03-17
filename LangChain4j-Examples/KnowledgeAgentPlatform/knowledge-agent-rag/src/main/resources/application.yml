@@ -1,3 +1,5 @@
 spring:
+  application:
+    name: knowledge-agent-rag
   profiles:
-    active: default
+    active: ${SPRING_PROFILES_ACTIVE:dev}

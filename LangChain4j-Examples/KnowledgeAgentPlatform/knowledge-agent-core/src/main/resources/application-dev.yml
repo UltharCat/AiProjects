@@ -1,14 +1,27 @@
 server:
-  port: 8083
+  port: ${CORE_SERVER_PORT:8083}
 spring:
   application:
     name: knowledge-agent-core
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration
 dubbo:
   application:
     name: knowledge-agent-core
+    qos-enable: false
   protocol:
     name: tri
-    port: 50053
+    port: ${CORE_DUBBO_PORT:50053}
   registry:
-    address: nacos://localhost:8848?username=nacos&password=nacos
+    address: ${DUBBO_REGISTRY_ADDRESS:nacos://localhost:8848?username=nacos&password=nacos}
     register-mode: instance
+    check: false
+    use-as-config-center: false
+    use-as-metadata-center: false
+  consumer:
+    check: false
+  config-center:
+    address: ${DUBBO_CONFIG_CENTER_ADDRESS:N/A}

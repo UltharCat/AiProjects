@@ -1,15 +1,15 @@
 server:
-  port: 8082
+  port: ${RAG_SERVER_PORT:8082}
 spring:
   application:
     name: knowledge-agent-rag
   datasource:
-    url: jdbc:mysql://localhost:3306/knowledge_agent?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC
-    username: root
-    password: root
+    url: ${RAG_DB_URL:jdbc:mysql://localhost:3306/knowledge_agent?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${RAG_DB_USERNAME:root}
+    password: ${RAG_DB_PASSWORD:root}
     driver-class-name: com.mysql.cj.jdbc.Driver
   flyway:
-    enabled: true
+    enabled: ${RAG_FLYWAY_ENABLED:true}
     baseline-on-migrate: true
     locations: classpath:db/migration
     table: flyway_schema_history_rag
@@ -17,26 +17,32 @@ spring:
 langchain4j:
   open-ai:
     embedding-model:
-      api-key: ${GEMINI_API_KEY}
-      base-url: ${AGENT_URL}
-      model-name: gemini-embedding-001
-      dimensions: 1536
+      api-key: ${GEMINI_API_KEY:test-key}
+      base-url: ${AGENT_URL:test-url}
+      model-name: ${RAG_EMBEDDING_MODEL_NAME:gemini-embedding-001}
+      dimensions: ${MILVUS_DIMENSION:1024}
 milvus:
   cloud:
-    url: ${MILVUS_CLOUD_URL}
-    collection-name: knowledge_rag_collection
-    token: ${MILVUS_CLOUD_TOKEN}
-    dimension: 1024
+    url: ${MILVUS_CLOUD_URL:http://localhost:19530}
+    collection-name: ${MILVUS_COLLECTION_NAME:knowledge_rag_collection}
+    token: ${MILVUS_CLOUD_TOKEN:root:Milvus}
+    dimension: ${MILVUS_DIMENSION:1024}
 mybatis-plus:
   configuration:
-    map-underscore-to-camel-case: true # 开启驼峰
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 开发环境打印SQL
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 dubbo:
   application:
     name: knowledge-rag
+    qos-enable: false
   protocol:
     name: tri
-    port: 50052
+    port: ${RAG_DUBBO_PORT:50052}
   registry:
-    address: nacos://localhost:8848?username=nacos&password=nacos
+    address: ${DUBBO_REGISTRY_ADDRESS:nacos://localhost:8848?username=nacos&password=nacos}
     register-mode: instance
+    check: false
+    use-as-config-center: false
+    use-as-metadata-center: false
+  config-center:
+    address: ${DUBBO_CONFIG_CENTER_ADDRESS:N/A}

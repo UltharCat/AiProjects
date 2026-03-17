@@ -5,7 +5,7 @@
 > 扫描日期：2026-03-17  
 > 项目路径：`F:\JavaProjects\AiProjects\LangChain4j-Examples\KnowledgeAgentPlatform`  
 > 构建结果：`mvn -DskipTests compile` 已通过  
-> 验证说明：完整 `mvn test` 仍依赖本地 `Nacos` 和外部服务，因此当前主要使用定向测试验证新增实现
+> 验证说明：`mvn test` 已通过；当前仓库已补齐面向配置的轻量验证测试，避免基础设施缺失直接阻塞基础回归
 
 ## 状态说明
 
@@ -257,7 +257,7 @@
 - RAG 侧：`KnowledgeCard`、`KnowledgeCardMapper`、`RagServiceImpl`、`MilvusConfig`、`V2__enhance_knowledge_card.sql`
 - Agent Core 侧：`ConversationState`、`StateContext`、`AgentServiceImpl`、`AgentPromptService`、`DubboAgentToolRouter`
 - Gateway 侧：`GatewayAuthController`、`GatewayAgentController`、`GatewayRagController`
-- 验证依据：`AgentServiceImplTest`、`GatewayAgentControllerTest`
+- 验证依据：`AgentServiceImplTest`、`GatewayAgentControllerTest`、`knowledge-agent-user/ApplicationTest`、`knowledge-agent-rag/ApplicationTest`、`knowledge-agent-gateway/KnowledgeAgentGatewayApplicationTest`
 
 ## 维护规则
 

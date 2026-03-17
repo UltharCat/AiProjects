@@ -1,10 +1,11 @@
 spring:
   config:
-    import[0]: nacos:knowledge-agent-rag?group=KNOWLEDGE_AGENT
+    import[0]: optional:nacos:knowledge-agent-rag?group=${NACOS_CONFIG_GROUP:KNOWLEDGE_AGENT}
   cloud:
     nacos:
       config:
-        server-addr: localhost:8848
-        username: nacos
-        password: nacos
+        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+        username: ${NACOS_USERNAME:nacos}
+        password: ${NACOS_PASSWORD:nacos}
+        namespace: ${NACOS_NAMESPACE:}
         file-extension: yaml
