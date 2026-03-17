@@ -219,6 +219,38 @@
 - Agent Core 虽然已经可用，但仍缺少真实模型执行能力
 - Phase 7 仍然不应提前进入主线
 
+## 下一阶段开发目标
+
+当前下一阶段的重点，是把 Gateway 从“可用入口”推进到“稳定入口层”，同时为 review 流程补上触发基础。
+
+### 目标 A：将 Gateway 从 MVP 入口提升为稳定的对外接入层
+
+- 为除登录外的所有 Gateway 接口补齐统一鉴权
+- 明确登录、对话、检索、复习接口之间的 token/header 约定
+- 为当前已经暴露的 Gateway 接口补齐外部 API 文档
+- 统一 Gateway 边界上的请求、响应和错误处理方式
+
+### 目标 B：让 review 从手动调用能力演进为“可触发”的能力
+
+- 增加登录后立即查询待复习项的能力
+- 定义初版 `ReviewTask` 模型或等价的响应契约
+- 预留定时调度生成复习任务的入口
+- 先预留基于 Redis 的去重挂点，但暂不实现完整队列体系
+
+### 目标 C：保持 Agent Core 稳定，同时延后真实模型执行接入
+
+- 保留当前基于 Dubbo 的规则编排链路作为兜底实现
+- 不把 Phase 7 的图谱、多模态、复杂工作流提前拉入当前阶段
+- 将 LangChain4j 真实运行时接入放在 Gateway/review 加固之后
+
+### 下一阶段完成判定
+
+- 除登录外的 Gateway 接口都受统一鉴权保护
+- 项目对外提供清晰可用的 login/chat/search/review API 文档
+- 用户登录后可以立即触发待复习项查询
+- review 的触发契约和调度契约已经清晰到足以进入下一阶段实现
+- `mvn -DskipTests compile` 持续通过，定向单测持续通过
+
 ## 当前完成依据
 
 - User 侧：`SysUser`、`SysUserMapper`、`SysUserServiceImpl`、User Flyway 脚本

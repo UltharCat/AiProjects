@@ -218,6 +218,38 @@ Rationale:
 - Review triggering still lacks scheduler/login integration
 - Agent Core still needs true model execution, but Phase 7 should remain out of scope for now
 
+## Next Stage Development Goals
+
+Current next-stage focus: finish the Gateway hardening work and lay the trigger foundation for the review loop.
+
+### Goal A: Move Gateway from MVP entrypoint to stable external access layer
+
+- Add unified request authentication for all non-login endpoints
+- Define a clear token/header convention between login, chat, search, and review APIs
+- Add external API documentation for the currently exposed Gateway endpoints
+- Normalize request/response and error handling at the Gateway boundary
+
+### Goal B: Turn review flow from manual invocation into triggerable capability
+
+- Add login-triggered pending review lookup
+- Define the initial `ReviewTask` model or equivalent response contract
+- Prepare the scheduler entrypoint for due-review generation
+- Reserve Redis-based deduplication hooks without implementing the full queue system yet
+
+### Goal C: Keep Agent Core stable while deferring full model execution
+
+- Preserve the current Dubbo orchestration path as the fallback implementation
+- Avoid expanding Phase 7 scope into graph, multimodal, or workflow features
+- Keep LangChain4j runtime integration as the stage after Gateway/review hardening
+
+### Exit Criteria for the Next Stage
+
+- Gateway endpoints except login are guarded by a unified auth mechanism
+- The project exposes a documented external API surface for login/chat/search/review
+- A user can trigger pending review retrieval immediately after login
+- Review trigger and scheduling contracts are defined clearly enough for the following stage
+- `mvn -DskipTests compile` still passes, and targeted unit tests remain green
+
 ## Current Evidence Pointers
 
 - User side: `SysUser`, `SysUserMapper`, `SysUserServiceImpl`, user Flyway script
