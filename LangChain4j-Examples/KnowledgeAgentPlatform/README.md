@@ -1,139 +1,299 @@
-# Enterprise Intelligent Knowledge Agent (企业级智能知识助手)
+# Knowledge Agent Platform
 
-基于 LangChain4j 构建的企业级 AI 知识管理与学习助手应用。本项目旨在打造一个具备深度学习指导、动态角色进化、多模态知识图谱生成及符合艾宾浩斯遗忘曲线记忆功能的智能体系统。
+面向知识辅导、知识沉淀与复习调度的学习型 Knowledge Agent 平台。项目基于 Spring Boot + Dubbo + LangChain4j + Milvus 构建，当前处于“工程骨架已成型、User/RAG 能力已落地、Agent Core 与 Gateway 待闭环”的阶段。
 
-## 🎯 项目愿景 (Vision)
+## 项目定位
 
-打造一个不仅仅是简单的问答机器人，而是用户的**专属知识伴侣**。它能够：
-1.  **深度辅导**：通过多轮对话引导用户理解复杂知识点，并协助总结结论。
-2.  **动态成长**：Agent 角色随用户交互习惯动态进化，形成独特的性格与沟通方式。
-3.  **科学记忆**：结合**知识图谱**与**艾宾浩斯遗忘曲线**，主动管理用户的知识留存。
+| 维度 | 当前定位 |
+| :--- | :--- |
+| 产品主线 | 学习型知识 Agent，而非通用企业 AI 门户 |
+| 核心目标 | 帮助用户完成知识辅导、知识归档、复习提醒 |
+| 当前形态 | Dubbo 微服务原型，优先打通服务边界与核心链路 |
+| 文档原则 | 以代码事实为准，目标态能力单独标记为“规划中” |
 
-## 🚧 当前进度 (Current Progress)
+## 当前状态
 
-截至 2026/02/15，项目开发进展如下：
-- [x] **基础设施**: Maven 多模块架构、MySQL 数据库及 Flyway 脚本。
-- [x] **API 定义**: 完成 `KnowledgeDTO`, `AgentService`, `RagService`, `UserService` 接口契约。
-- [x] **User Service**: 完成用户表设计、`SysUser` 实体及画像获取逻辑。
-- [x] **RAG Service**: 完成知识切片存储、Milvus 向量检索逻辑及 MySQL 知识卡片管理。
-- [ ] **Agent Service**: 正在开发中（核心状态机与 LLM 集成待实现）。
-- [ ] **Gateway**: 待完善。
+- 代码已存在：多模块 Maven/Dubbo 工程骨架，包含 `knowledge-agent-common`、`knowledge-agent-api`、`knowledge-agent-user`、`knowledge-agent-rag`、`knowledge-agent-core`、`knowledge-agent-gateway`
+- 代码已存在：`UserService.login`、`UserService.getUserProfile`
+- 代码已存在：`RagService.saveKnowledge`、`RagService.updateReviewStatus`
+- 代码已存在：Milvus Hybrid Retrieval 底座，包含 dense + sparse + RRF 检索能力
+- 代码已存在：MySQL/Flyway 初始化脚本，覆盖用户表与知识复习卡片表
+- 代码已存在：`docker-compose.yml` 中的 Nacos、Redis、MySQL、RocketMQ 依赖编排骨架
+- 契约已定义但无实现：`AgentService.chat`、`AgentService.switchState`
+- 契约已定义但无实现：Gateway 对外 HTTP/SSE 入口
+- 规划中：FSM/ReAct 执行链、文档导入流水线、复习推送、知识图谱、多模态生成
 
-## 🛠 技术栈 (Tech Stack)
+## 当前已实现能力
 
-*   **Core Framework**: Spring Boot 3.2+ (JDK 21 虚拟线程 - Virtual Threads)
-*   **Microservices Framework**: **Apache Dubbo 3.x** (Triple Protocol) - 高性能 RPC 通信。
-*   **Registry & Config**: **Alibaba Nacos 3.x** - 统一服务注册与发现、分布式动态配置中心。
-*   **AI Framework**: LangChain4j (ReAct Agent, RAG, Tooling)
-*   **LLM Providers**:
-    *   **Chat Model**: Google Gemini (via `langchain4j-google-ai-gemini`)
-    *   **Embedding Model**: Google Gemini (via `langchain4j-google-ai-gemini`)
-    *   *(Future/Opt)* **OpenAI**: 计划在优化阶段引入，提供更强的 Embedding 或备用对话模型。
-*   **Storage**:
-    *   **MySQL**: 这里的用户管理 (MyBatis-Plus) 与基础业务数据。
-    *   **Redis**: 短期记忆缓存 (Sliding Window)、用户会话状态。
-    *   **Milvus**: 向量数据库，存储 Embedding，提供语义检索。
-    *   *(Future/Opt)* **Elasticsearch**: 计划在优化阶段引入，提供 BM25 全文检索。
-    *   *(Future/Opt)* **Neo4j**: 计划在优化阶段引入，构建知识图谱。
-*   **Messaging**: RocketMQ 5.x (系统解耦、事务消息保障数据一致性)。
-*   **Architecture**: Dubbo Microservices (Restless/Headless Back-end).
+### 1. 工程与服务骨架
 
-## 🏗 系统架构设计 (System Architecture)
+- 父工程采用 Maven 多模块结构，模块职责已经拆分清楚
+- `knowledge-agent-api` 提供 Dubbo 公共接口与 DTO/Request 契约
+- `knowledge-agent-common` 提供通用返回体、异常处理与 SM-2 复习算法工具
+- `knowledge-agent-core` 与 `knowledge-agent-gateway` 已有启动类与依赖声明，但尚未形成业务闭环
 
-系统采用基于 **Dubbo** 的微服务架构，各服务间通过 RPC (Triple协议) 进行高性能通信。对外通过 **Gateway/BFF** 层暴露标准的 HTTP/Restful 接口。
+### 2. User Service
 
-### 1. 核心服务划分 (Service Modules)
-*   **Gateway Service (Web/BFF)**: 
-    *   作为系统的统一入口 (Dubbo Consumer)。
-    *   处理 HTTP 请求，进行鉴权，并调用后端 RPC 服务。
-    *   支持 SSE (Server-Sent Events) 流式响应，适配 LLM 打字机效果。
-*   **User Service (Provider)**:
-    *   负责用户领域模型。
-    *   功能：账号管理、角色绑定、偏好设置。
-    *   技术：MySQL + MyBatis-Plus。
-*   **Agent Service (Provider)**: 
-    *   系统的核心大脑。
-    *   功能：维护状态机 (FSM)、Prompt工程、ReAct 任务调度、文生图调用。
-    *   通信：通过 Dubbo 调用 RAG Service 获取知识，调用 User Service 获取画像。
-*   **RAG Service (Provider)**:
-    *   知识检索与存储中心。
-    *   功能：向量化 (Embedding)、语义检索。
-    *   技术：Milvus。
+- 已有 `sys_user` 表、实体、Mapper 与 Flyway 脚本
+- 已实现登录校验，使用 BCrypt 校验密码
+- 已实现学习风格画像读取，当前返回用户 `learningStyle`
+- 当前返回的仍是 mock token，JWT 与登录态模型尚未落地
 
-### 2. 记忆与知识库设计 (Storage Strategy)
-采用 **分层记忆体系**，明确区分"客观文档"与"主观认知"：
+### 3. RAG Service
 
-*   **MySQL (Core Truth)**: 
-    *   存储所有 **Knowledge Card** 的完整内容、元数据及艾宾浩斯算法参数 (`review_count`, `ef`, `interval` 等)。
-    *   **关联更新策略**: 当发生深度辅导导致知识点进化时，直接 **覆盖 (Overwrite)** MySQL 中的 `answer` 字段，代表当前最新的认知状态。
-*   **Milvus (Semantic Index)**: 
-    *   存储文本的 Embedding 向量。
-    *   **静态文档库**: 存储参考书籍/文档切片，策略为 **只增不改 (Append-only)**。
-    *   **内化知识库**: 存储 Knowledge Card 向量，策略为 **删旧插新 (Delete Old & Insert New)**，确保向量检索总是命中最新的知识形态。
-*   **Redis (Short-term)**: 
-    *   保存最近的对话上下文 (Sliding Window)，确保多轮对话流畅。
+- 已有 `knowledge_card` 复习卡片表、实体、Mapper 与 Flyway 脚本
+- 已实现知识归档写入：
+  - 文本切分
+  - Embedding 生成
+  - Milvus 入库
+  - MySQL 复习卡片初始化
+- 已实现 SM-2 复习参数更新：`easiness_factor`、`interval_days`、`repetition`、`next_review_date`
+- 已具备 Milvus collection 初始化能力，包含 dense/sparse 字段和 RRF 检索底座
+- 当前尚未对外暴露标准 `search/recall` 接口，检索能力主要以内聚在服务内部的方式存在
 
-### 3. Agent 核心机制
-*   **ReAct 架构**: Agent 具备"思考-行动"循环能力，解析用户需求后调度不同工具或子 Agent。
-*   **状态机 (State Machine)**: 严格管理会话状态（闲聊 -> 学习 -> 总结 -> 确认 -> 归档），防止 Prompt 漂移。
-*   *(Future/Opt)* **动态角色进化**:
-    *   计划在优化阶段实现。根据历史对话的情感、语气偏好，动态调整 Agent 的 Prompt 配置，使其逐渐"适应"用户。
+### 4. 基础依赖编排
 
-### 4. 高并发与一致性
-*   **虚拟线程 (Virtual Threads)**: 全链路启用 JDK 21 虚拟线程，大幅提升 RPC 调用和 IO 密集型任务吞吐。
-*   **RocketMQ 事务消息**:
-    *   确保 知识点入库、图谱更新、统计分析 等操作的数据一致性。
-    *   **流程**: Agent Service 确认知识点 -> 发送 Half Msg -> 扣减用户Token/记录Log (Local Tx) -> Commit Msg -> RAG Service 消费消息并写入 Milvus。
+- `docker-compose.yml` 已提供以下依赖骨架：
+  - Nacos
+  - Redis
+  - MySQL
+  - RocketMQ Namesrv/Broker/Proxy/Dashboard
+- 当前依赖编排可作为本地开发环境基线，但业务侧尚未全部接通这些组件
 
-## 💡 核心业务流程 (Core Features)
+## 规划中能力
 
-### 1. 深度学习模式 (Deep Learning Mode)
-*   **交互**: 用户询问不懂的知识点 -> Agent 多轮解释/举例 -> 用户/Agent 总结结论。
-*   **归档**: 结论被确认为"知识点"，经压缩后存入向量库与图谱。
+以下内容属于设计目标，不应视为当前已完成：
 
-### 2. 艾宾浩斯记忆提醒 (Ebbinghaus Reminders)
-*   **触发机制**: 用户登录/应用启动时。
-*   **逻辑**: User Service 登录成功后，异步触发 Agent Service 计算遗忘曲线，查询 RAG Service 获取相关知识点。
-*   **频率控制**: 低频提醒 (同一知识点单日不重复)。
-*   **主动交互**: Agent 主动发起对话："你还记得关于 [XXX] 的这个结论吗？"
+- Agent Core 的 FSM 状态机与 ReAct 执行链
+- 基于 LangChain4j Tools 的工具路由与 Prompt 装配
+- Gateway/BFF 的 HTTP API、统一鉴权、SSE 流式响应
+- 文档导入与批处理知识入库流水线
+- 登录触发或定时触发的复习提醒
+- Redis 会话记忆、Review Queue 与提醒去重
+- RocketMQ 驱动的异步知识归档事件流
+- Neo4j 知识图谱、多模态生成、动态角色进化
 
-### 3. 多模态图谱生成 (Multimodal Graph Generaton)
-*   **场景**: 在进行艾宾浩斯提醒时。
-*   **功能**: 调用文生图模型 (Text-to-Image)。
-*   **内容**: 基于 Neo4j 中的知识点结构，生成一张表示知识点关系的逻辑图谱图片 (辅助记忆)。
+## 公共契约分层
 
-## 🧩 关键概念详解
+### 代码已存在
 
-### 1. 状态机 (State Machine)
-引入 FSM 管理复杂的"教学-总结-确认"流程，避免 Prompt 漂移。
-*   **States**: 
-    *   `IDLE`: 空闲状态。
-    *   `TEACHING_EXPLAIN`: 概念讲解状态。
-    *   `TEACHING_QUIZ`: 互动提问状态。
-    *   `SUMMARIZING`: 知识总结状态。
-    *   `CONFIRMING`: 用户确认状态。
-    *   `RECORDING`: 知识入库状态。
-*   **Transitions**: 基于用户意图 (Intent Classification) 和对话轮次触发状态流转。
+- `UserService.login`
+- `UserService.getUserProfile`
+- `RagService.saveKnowledge`
+- `RagService.updateReviewStatus`
+- `KnowledgeDTO`
+- `ChatRequest`
+- `UserLoginRequest`
 
-### 2. 事务消息流程 (RocketMQ)
-利用 RocketMQ 的 Transactional Message 特性：
-1.  **Sender (Agent Service)**: 发送 `Half Message` (Topic: `KNOWLEDGE_Confirm`).
-2.  **Local Transaction**: 记录用户学习日志到 MySQL。
-3.  **Confirm**: 提交消息。
-4.  **Receiver (RAG Service)**: 监听 Topic，收到消息后，幂等地将知识写入 Neo4j 和 PGVector。
+### 契约已定义但无实现
 
-## 📂 项目结构规划 (Dubbo Structure)
+- `AgentService.chat`
+- `AgentService.switchState`
 
-标准的 Dubbo 分层架构：
+### 仅规划中
 
+- Gateway 的 HTTP/SSE 对外接口
+- `ConversationState`
+- `StateContext`
+- `ReviewTask`
+- `ReminderEvent`
+- 检索响应中的 citation/source/direct-answer 结构
+
+## 架构设计
+
+### 当前架构
+
+```mermaid
+flowchart LR
+    Client["Client / Future Gateway"] --> API["knowledge-agent-api"]
+    API --> User["knowledge-agent-user"]
+    API --> Rag["knowledge-agent-rag"]
+    CoreShell["knowledge-agent-core (shell)"] --> API
+    GatewayShell["knowledge-agent-gateway (shell)"] --> API
+    User --> MySQL["MySQL"]
+    Rag --> MySQL
+    Rag --> Milvus["Milvus"]
+    Infra["docker-compose infra"] --> Nacos["Nacos"]
+    Infra --> Redis["Redis"]
+    Infra --> MQ["RocketMQ"]
 ```
-KnowledgeAgentPlatform/
-├── knowledge-agent-common/     # 公共模块：Utils, Constants, Base Classes
-├── knowledge-agent-api/        # 接口模块：存放 Dubbo Interface (Service), DTOs, Enums
-├── knowledge-agent-user/       # 用户服务 (Provider): MySQL, User Logic -> Implements UserService
-├── knowledge-agent-rag/        # RAG服务 (Provider): Milvus -> Implements RagService
-├── knowledge-agent-core/       # Agent核心服务 (Provider): LLM, FSM, RocketMQ Producer -> Implements AgentService
-├── knowledge-agent-gateway/    # 网关/Web层 (Consumer): Spring Boot Web, Controller, SSE -> Consumes Dubbo Services
-├── pom.xml
-└── README.md
+
+当前实际可依赖的核心链路是 `User + RAG + 公共契约 + 基础依赖骨架`。`core` 和 `gateway` 目前更接近占位模块，而不是已完成服务。
+
+### 目标架构
+
+```mermaid
+flowchart LR
+    Client["Web / App"] --> Gateway["Gateway / BFF"]
+    Gateway --> Agent["Agent Core"]
+    Gateway --> User["User Service"]
+    Gateway --> Rag["RAG Service"]
+    Agent --> User
+    Agent --> Rag
+    Agent --> Redis["Redis Chat Memory"]
+    Agent --> MQ["RocketMQ Events"]
+    Rag --> Milvus["Milvus Hybrid Search"]
+    Rag --> MySQL["MySQL Knowledge Cards"]
+    User --> MySQL
+    Scheduler["Review Scheduler"] --> Agent
+    Scheduler --> Rag
 ```
+
+目标态中，`Gateway` 负责对外接入，`Agent Core` 负责意图判断、状态流转和工具调用，`RAG` 负责知识写入与召回，`Review Scheduler` 负责生成待复习任务。
+
+## 端到端流程
+
+### 1. 学习对话流
+
+`输入接入` -> `身份与用户画像` -> `意图判断` -> `状态选择(IDLE/TEACHING/REVIEW/SUMMARY)` -> `知识检索` -> `LLM/Tool 执行` -> `结果返回` -> `可选知识归档`
+
+推荐实现形态：
+
+1. Gateway 接收用户输入并附带身份信息
+2. Agent Core 读取用户画像和当前会话状态
+3. Agent Core 根据意图选择教学、复习或总结状态
+4. 需要知识补充时调用 RAG 检索
+5. LLM 基于状态指令与工具结果生成响应
+6. 在满足总结条件时触发知识归档
+
+### 2. 知识归档流
+
+`总结文本` -> `文本清洗` -> `切片` -> `Embedding` -> `Milvus 入库` -> `KnowledgeCard 初始化` -> `标签/来源元数据`
+
+当前代码已覆盖：
+
+- 总结文本接收
+- 文本切分
+- Embedding
+- Milvus 入库
+- `knowledge_card` 初始化
+
+后续需要补全：
+
+- 来源字段
+- 标签过滤
+- 引用回传
+- 批处理导入
+
+### 3. 复习提醒流
+
+`登录或定时触发` -> `筛选 next_review_date 到期卡片` -> `生成复习列表` -> `Agent 提问` -> `质量评分(0..5)` -> `SM-2 更新` -> `提醒去重`
+
+当前代码已覆盖：
+
+- SM-2 参数计算
+- 复习结果更新
+
+当前尚未覆盖：
+
+- 待复习卡片查询
+- Review Queue
+- 登录触发
+- 定时调度
+- Agent 复习交互
+- 去重策略
+
+## 为什么这样设计
+
+本项目在目标形态上借鉴了 Dify、FastGPT、MaxKB、RAGFlow、LangChain4j 和 Milvus 的成熟做法，但落地方式保持当前 Dubbo 微服务边界，不直接演进成低代码工作流产品。
+
+### 设计原则 1：节点化编排，但先落服务化 MVP
+
+- 借鉴 Dify/MaxKB/FastGPT 的分类、分支、检索、变量记忆思想
+- 当前阶段先把这些节点能力沉淀为后端服务与明确接口，再考虑可视化编排
+
+### 设计原则 2：多路检索与重排优先于过早上图谱
+
+- 当前 RAG 已具备 dense + sparse + RRF 的良好基础
+- 在标准检索接口、引用回传、召回质量稳定之前，不优先推进知识图谱
+
+### 设计原则 3：会话记忆与知识记忆分层
+
+- 短期会话记忆适合 Redis 或 Chat Memory
+- 长期知识沉淀适合 MySQL + Milvus
+- 复习参数属于长期知识记忆的一部分，不应混入短期上下文缓存
+
+### 设计原则 4：导入链路、检索链路、对话链路分离
+
+- 导入链路负责清洗、切片、向量化和入库
+- 检索链路负责召回、重排和结果封装
+- 对话链路负责状态控制、提示词装配和工具调度
+
+这种拆分有利于后续将同步 Dubbo 调用逐步演进为 RocketMQ 异步事件流。
+
+## 参考项目与设计来源
+
+- [Dify Knowledge Retrieval](https://docs.dify.ai/en/use-dify/nodes/knowledge-retrieval)
+- [Dify Agent](https://docs.dify.ai/en/use-dify/nodes/agent)
+- [Dify Variable Assigner](https://docs.dify.ai/en/use-dify/nodes/variable-assigner)
+- [FastGPT Knowledge Base Search Merge](https://doc.fastgpt.io/en/docs/introduction/guide/dashboard/workflow/knowledge_base_search_merge)
+- [MaxKB Knowledge Base](https://docs.maxkb.pro/user_manual/dataset/dataset/)
+- [MaxKB Workflow](https://docs.maxkb.pro/user_manual/app/workflow_app/)
+- [RAGFlow](https://github.com/infiniflow/ragflow)
+- [LangChain4j AI Services](https://docs.langchain4j.dev/tutorials/ai-services/)
+- [LangChain4j Chat Memory](https://docs.langchain4j.dev/tutorials/chat-memory/)
+- [Milvus RRF Ranker](https://milvus.io/docs/id/rrf-ranker.md)
+
+## 本地启动说明
+
+### 1. 基础依赖
+
+优先启动：
+
+1. MySQL
+2. Nacos
+3. Milvus
+4. Redis
+5. RocketMQ
+
+项目中已提供 `docker-compose.yml` 作为本地依赖基线，但其中未包含 Milvus，需要额外准备。
+
+### 2. 推荐启动顺序
+
+1. `knowledge-agent-user`
+2. `knowledge-agent-rag`
+3. `knowledge-agent-core`
+4. `knowledge-agent-gateway`
+
+当前只有 `user` 和 `rag` 具备明确业务实现，`core` 与 `gateway` 主要用于后续接入。
+
+### 3. 构建与测试现状
+
+- 2026-03-17：`mvn -DskipTests compile` 已通过
+- 2026-03-17：`mvn test` 未通过，主要原因是测试启动依赖本地 `Nacos` 和其他外部组件
+- 因此当前应区分：
+  - 可编译
+  - 依赖齐全时可集成运行
+  - 业务链路完整闭环
+
+## 模块说明
+
+### `knowledge-agent-common`
+
+公共返回体、异常处理、工具类。
+
+### `knowledge-agent-api`
+
+Dubbo 服务接口、DTO、Request 契约。
+
+### `knowledge-agent-user`
+
+用户登录、学习风格画像与用户基础数据。
+
+### `knowledge-agent-rag`
+
+知识归档、Milvus 检索底座、复习参数更新。
+
+### `knowledge-agent-core`
+
+当前为 Agent Core 壳模块，后续承接 FSM/ReAct、Prompt 装配、Tool 路由和会话记忆。
+
+### `knowledge-agent-gateway`
+
+当前为 Gateway 壳模块，后续承接 HTTP API、SSE 与对外鉴权。
+
+## 后续文档整理建议
+
+- 根目录 `README.md` 负责描述整个平台
+- `knowledge-agent-core/README.md` 后续应收敛为 Core 模块内部设计说明，避免与根文档重复或冲突
+- `ROADMAP.md` 负责描述阶段目标与完成判定，不承担产品宣传角色
