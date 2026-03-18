@@ -1,5 +1,6 @@
 package com.knowledge.agent.common.resp;
 
+import com.knowledge.agent.common.exception.ErrorCode;
 import lombok.Data;
 
 import java.io.Serial;
@@ -20,8 +21,8 @@ public class Result<T> implements Serializable {
 
     public static <T> Result<T> success(T data) {
         Result<T> result = new Result<>();
-        result.setCode(200);
-        result.setMessage("Success");
+        result.setCode(ErrorCode.SUCCESS.code());
+        result.setMessage(ErrorCode.SUCCESS.defaultMessage());
         result.setData(data);
         return result;
     }
@@ -31,6 +32,18 @@ public class Result<T> implements Serializable {
         result.setCode(code);
         result.setMessage(message);
         return result;
+    }
+
+    public static <T> Result<T> error(ErrorCode errorCode) {
+        return error(errorCode.code(), errorCode.defaultMessage());
+    }
+
+    public static <T> Result<T> error(ErrorCode errorCode, String message) {
+        return error(errorCode.code(), message);
+    }
+
+    public boolean isSuccess() {
+        return ErrorCode.SUCCESS.code() == code;
     }
 
 }

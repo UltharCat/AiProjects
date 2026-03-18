@@ -46,13 +46,14 @@
 - [x] `knowledge-agent-core` 的基础运行配置
 - [x] Milvus dense/sparse 集合初始化
 - [x] `docker-compose.yml` 中的 Nacos/Redis/MySQL/RocketMQ 基线
-- [ ] Redis 连接与缓存接入
-- [ ] RocketMQ Topic、生产者、消费者接入
+- [-] Redis 连接、去重缓存与批次缓存接入
+- [x] RocketMQ Topic、生产者、消费者最小接入骨架
 
 完成判定：
 
 - 标为 `[x]` 的项必须有明确文件或配置支撑
-- Phase 0 只有在 Redis 和 RocketMQ 也形成最小可用接入后才算真正完成
+- Phase 0 中 RocketMQ 最小事件通道已补齐
+- Redis 已接入 review 去重与批次缓存，但仍需结合更多运行场景继续验证
 
 ## Phase 1：公共契约与通用能力
 

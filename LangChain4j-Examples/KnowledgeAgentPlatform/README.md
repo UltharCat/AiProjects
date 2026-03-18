@@ -19,9 +19,10 @@
 - 代码已存在：Milvus Hybrid Retrieval 底座，包含 dense + sparse + RRF 检索能力
 - 代码已存在：MySQL/Flyway 初始化脚本，覆盖用户表与知识复习卡片表
 - 代码已存在：`docker-compose.yml` 中的 Nacos、Redis、MySQL、RocketMQ 依赖编排骨架
-- 契约已定义但无实现：`AgentService.chat`、`AgentService.switchState`
-- 契约已定义但无实现：Gateway 对外 HTTP/SSE 入口
-- 规划中：FSM/ReAct 执行链、文档导入流水线、复习推送、知识图谱、多模态生成
+- 代码已存在：Gateway 鉴权拦截器、Review 批次派发/去重、登录触发与定时调度入口
+- 代码已存在：JWT 令牌工具与 Gateway 对外 API 文档草案
+- 当前仍待补齐：真实 User HTTP 接口、标准化 RAG 导入链路、真实 LangChain4j 运行时接入
+- 规划中：FSM/ReAct 执行链增强、知识图谱、多模态生成
 
 ## 当前已实现能力
 
@@ -30,7 +31,7 @@
 - 父工程采用 Maven 多模块结构，模块职责已经拆分清楚
 - `knowledge-agent-api` 提供 Dubbo 公共接口与 DTO/Request 契约
 - `knowledge-agent-common` 提供通用返回体、异常处理与 SM-2 复习算法工具
-- `knowledge-agent-core` 与 `knowledge-agent-gateway` 已有启动类与依赖声明，但尚未形成业务闭环
+- `knowledge-agent-core` 已具备基础 Agent 编排链路，`knowledge-agent-gateway` 已具备鉴权、SSE/HTTP 入口与 Review 批次能力
 
 ### 2. User Service
 
@@ -49,7 +50,7 @@
   - MySQL 复习卡片初始化
 - 已实现 SM-2 复习参数更新：`easiness_factor`、`interval_days`、`repetition`、`next_review_date`
 - 已具备 Milvus collection 初始化能力，包含 dense/sparse 字段和 RRF 检索底座
-- 当前尚未对外暴露标准 `search/recall` 接口，检索能力主要以内聚在服务内部的方式存在
+- 当前已对外暴露基础搜索与待复习查询入口，但 citation/source/direct-answer 等响应结构仍待补齐
 
 ### 4. 基础依赖编排
 
@@ -58,7 +59,7 @@
   - Redis
   - MySQL
   - RocketMQ Namesrv/Broker/Proxy/Dashboard
-- 当前依赖编排可作为本地开发环境基线，但业务侧尚未全部接通这些组件
+- 当前依赖编排可作为本地开发环境基线，Redis 已接入 review 去重与批次缓存降级链路，RocketMQ 已补齐最小事件契约与收发骨架
 
 ## 规划中能力
 
@@ -66,11 +67,11 @@
 
 - Agent Core 的 FSM 状态机与 ReAct 执行链
 - 基于 LangChain4j Tools 的工具路由与 Prompt 装配
-- Gateway/BFF 的 HTTP API、统一鉴权、SSE 流式响应
+- Gateway/BFF 的入口层继续增强，但基础 HTTP API、统一鉴权与 SSE 已有可运行实现
 - 文档导入与批处理知识入库流水线
-- 登录触发或定时触发的复习提醒
+- 登录触发或定时触发的复习提醒增强
 - Redis 会话记忆、Review Queue 与提醒去重
-- RocketMQ 驱动的异步知识归档事件流
+- RocketMQ 驱动的异步知识归档/Review 批次事件流（当前为最小可用骨架）
 - Neo4j 知识图谱、多模态生成、动态角色进化
 
 ## 公共契约分层
@@ -92,7 +93,6 @@
 
 ### 仅规划中
 
-- Gateway 的 HTTP/SSE 对外接口
 - `ConversationState`
 - `StateContext`
 - `ReviewTask`
@@ -118,7 +118,7 @@ flowchart LR
     Infra --> MQ["RocketMQ"]
 ```
 
-当前实际可依赖的核心链路是 `User + RAG + 公共契约 + 基础依赖骨架`。`core` 和 `gateway` 目前更接近占位模块，而不是已完成服务。
+当前实际可依赖的核心链路已经扩展到 `User + RAG + Agent Core MVP + Gateway 鉴权/Review 批次 + 基础依赖骨架`，但真实模型执行、标准化导入链路与持久化会话记忆仍待补齐。
 
 ### 目标架构
 
@@ -255,7 +255,7 @@ flowchart LR
 3. `knowledge-agent-core`
 4. `knowledge-agent-gateway`
 
-当前只有 `user` 和 `rag` 具备明确业务实现，`core` 与 `gateway` 主要用于后续接入。
+当前 `user`、`rag`、`core`、`gateway` 均已有明确业务职责，其中 `core/gateway` 仍处于 MVP 到稳定版之间的加固阶段。
 
 ### 3. 构建与测试现状
 
@@ -290,7 +290,7 @@ Dubbo 服务接口、DTO、Request 契约。
 
 ### `knowledge-agent-gateway`
 
-当前为 Gateway 壳模块，后续承接 HTTP API、SSE 与对外鉴权。
+当前已提供 HTTP API、SSE、Bearer Token 鉴权与 review 相关入口，后续继续补齐统一外部契约与更稳定的入口层能力。
 
 ## 后续文档整理建议
 

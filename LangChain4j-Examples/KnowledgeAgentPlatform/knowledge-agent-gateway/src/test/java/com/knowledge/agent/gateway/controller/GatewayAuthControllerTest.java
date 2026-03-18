@@ -1,6 +1,7 @@
 package com.knowledge.agent.gateway.controller;
 
 import com.knowledge.agent.api.dto.ReviewTaskDTO;
+import com.knowledge.agent.api.dto.ReviewTaskStatus;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
 import com.knowledge.agent.api.request.UserLoginRequest;
 import com.knowledge.agent.api.service.UserService;
@@ -42,7 +43,7 @@ class GatewayAuthControllerTest {
                         .summary("SM-2 overview")
                         .dueAt(LocalDateTime.now())
                         .triggerSource(ReviewTriggerSource.LOGIN)
-                        .status("PENDING")
+                        .status(ReviewTaskStatus.DISPATCHED)
                         .dedupKey("LOGIN:1:99")
                         .build()))
                 .build());

@@ -1,6 +1,7 @@
 package com.knowledge.agent.common.handler;
 
 import com.knowledge.agent.common.exception.BizException;
+import com.knowledge.agent.common.exception.ErrorCode;
 import com.knowledge.agent.common.resp.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -19,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     public Result<Void> handleException(Exception e) {
         log.error("Unexpected exception occurred: ", e);
-        return Result.error( 500,"An unexpected error occurred.");
+        return Result.error(ErrorCode.INTERNAL_ERROR, "An unexpected error occurred.");
     }
 
 }

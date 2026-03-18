@@ -1,5 +1,6 @@
 package com.knowledge.agent.core.prompt;
 
+import com.knowledge.agent.api.dto.UserProfileDTO;
 import com.knowledge.agent.core.model.ConversationState;
 import org.springframework.stereotype.Component;
 
@@ -14,5 +15,9 @@ public class AgentPromptService {
             case REVIEW -> "The agent is in review mode. Ask recall-first questions and update memory after feedback.";
             case SUMMARY -> "The agent is in summary mode. Turn recent dialog into a reusable knowledge summary.";
         };
+    }
+
+    public String buildInstruction(ConversationState state, UserProfileDTO userProfile) {
+        return buildInstruction(state, userProfile == null ? null : userProfile.getLearningStyle());
     }
 }

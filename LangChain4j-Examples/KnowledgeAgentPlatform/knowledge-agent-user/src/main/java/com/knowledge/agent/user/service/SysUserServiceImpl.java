@@ -1,7 +1,11 @@
 package com.knowledge.agent.user.service;
 
 import cn.hutool.core.util.StrUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.knowledge.agent.api.dto.UserProfileDTO;
 import com.knowledge.agent.api.request.UserLoginRequest;
 import com.knowledge.agent.api.service.UserService;
 import com.knowledge.agent.common.auth.JwtTokenUtils;
@@ -16,12 +20,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
 @DubboService
 public class SysUserServiceImpl implements UserService {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final SysUserMapper sysUserMapper;
 
@@ -70,9 +78,18 @@ public class SysUserServiceImpl implements UserService {
 
     @Override
     public Result<String> getUserProfile(Long userId) {
+        UserProfileDTO profile = getUserProfileDetail(userId).getData();
+        if (profile == null) {
+            return Result.success("{}");
+        }
+        return Result.success(StrUtil.blankToDefault(profile.getPreferencesJson(), "{}"));
+    }
+
+    @Override
+    public Result<UserProfileDTO> getUserProfileDetail(Long userId) {
         SysUser user = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getId, userId));
-        return Result.success(user != null && StrUtil.isNotBlank(user.getLearningStyle()) ? user.getLearningStyle() : "{}");
+        return Result.success(user == null ? null : toProfile(user));
     }
 
     @Override
@@ -84,6 +101,44 @@ public class SysUserServiceImpl implements UserService {
                 .map(SysUser::getId)
                 .toList();
         return Result.success(userIds);
+    }
+
+    private UserProfileDTO toProfile(SysUser user) {
+        Map<String, String> preferences = resolvePreferences(user);
+        return UserProfileDTO.builder()
+                .userId(user.getId())
+                .username(user.getUsername())
+                .learningStyle(user.getLearningStyle())
+                .preferencesJson(writePreferencesJson(preferences))
+                .preferences(preferences)
+                .build();
+    }
+
+    private Map<String, String> resolvePreferences(SysUser user) {
+        Map<String, String> defaults = new LinkedHashMap<>();
+        defaults.put("learningStyle", StrUtil.blankToDefault(user.getLearningStyle(), "SOCRATIC"));
+        defaults.put("responseDepth", "guided");
+        defaults.put("reviewMode", "recall-first");
+        if (StrUtil.isBlank(user.getPreferencesJson())) {
+            return defaults;
+        }
+        try {
+            Map<String, String> parsed = OBJECT_MAPPER.readValue(user.getPreferencesJson(), new TypeReference<>() {
+            });
+            defaults.putAll(parsed);
+            return defaults;
+        } catch (JsonProcessingException ex) {
+            log.warn("Failed to parse preferences_json for userId={}, falling back to defaults", user.getId(), ex);
+            return defaults;
+        }
+    }
+
+    private String writePreferencesJson(Map<String, String> preferences) {
+        try {
+            return OBJECT_MAPPER.writeValueAsString(preferences);
+        } catch (JsonProcessingException ex) {
+            throw new IllegalStateException("Failed to serialize user preferences", ex);
+        }
     }
 
 }

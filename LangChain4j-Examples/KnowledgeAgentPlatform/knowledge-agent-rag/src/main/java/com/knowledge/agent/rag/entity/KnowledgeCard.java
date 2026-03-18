@@ -38,6 +38,11 @@ public class KnowledgeCard implements Serializable {
     private String summary;
 
     /**
+     * Source descriptor such as manual summary or imported document path.
+     */
+    private String source;
+
+    /**
      * Tags encoded as JSON.
      */
     private String tagsJson;

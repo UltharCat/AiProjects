@@ -1,6 +1,8 @@
 package com.knowledge.agent.gateway.controller;
 
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.ReviewTaskBatchDTO;
+import com.knowledge.agent.api.dto.ReviewTaskStatus;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
 import com.knowledge.agent.api.service.RagService;
 import com.knowledge.agent.common.exception.BizException;
@@ -49,14 +51,20 @@ public class GatewayReviewController {
 
     @GetMapping("/scheduled/latest")
     public Result<ReviewTaskBatchResponse> latestScheduledBatch() {
+        Long userId = GatewayUserContext.requireUserId();
+        Result<ReviewTaskBatchDTO> persistedResult = ragService.findLatestReviewTaskBatch(userId, ReviewTriggerSource.SCHEDULED);
+        if (persistedResult != null && Objects.equals(persistedResult.getCode(), 200) && persistedResult.getData() != null) {
+            return Result.success(toResponse(persistedResult.getData()));
+        }
         return Result.success(reviewTaskBatchStore.findLatest(
-                GatewayUserContext.requireUserId(),
+                userId,
                 ReviewTriggerSource.SCHEDULED
         ).orElse(ReviewTaskBatchResponse.builder()
-                .userId(GatewayUserContext.requireUserId())
+                .userId(userId)
                 .triggerSource(ReviewTriggerSource.SCHEDULED)
                 .requestedLimit(0)
                 .dispatchedCount(0)
+                .createdAt(null)
                 .tasks(List.of())
                 .build()));
     }
@@ -72,6 +80,23 @@ public class GatewayReviewController {
         if (!allowed) {
             throw new BizException(403, "Review item is not available for the current user");
         }
-        return ragService.updateReviewStatus(request.knowledgeId(), request.quality());
+        Result<Void> updateResult = ragService.updateReviewStatus(request.knowledgeId(), request.quality());
+        if (!Objects.equals(updateResult.getCode(), 200)) {
+            return updateResult;
+        }
+        ragService.updateReviewTaskStatus(userId, request.knowledgeId(), ReviewTaskStatus.COMPLETED);
+        return updateResult;
+    }
+
+    private ReviewTaskBatchResponse toResponse(ReviewTaskBatchDTO batch) {
+        return ReviewTaskBatchResponse.builder()
+                .batchId(batch.getBatchId())
+                .userId(batch.getUserId())
+                .triggerSource(batch.getTriggerSource())
+                .requestedLimit(batch.getRequestedLimit())
+                .dispatchedCount(batch.getDispatchedCount())
+                .createdAt(batch.getCreatedAt())
+                .tasks(batch.getTasks() == null ? List.of() : batch.getTasks())
+                .build();
     }
 }

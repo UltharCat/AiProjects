@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/rag")
@@ -21,7 +22,8 @@ public class GatewayRagController {
 
     @GetMapping("/search")
     public Result<List<KnowledgeDTO>> search(@RequestParam String query,
-                                             @RequestParam(defaultValue = "3") Integer limit) {
-        return ragService.searchKnowledge(GatewayUserContext.requireUserId(), query, limit);
+                                             @RequestParam(defaultValue = "3") Integer limit,
+                                             @RequestParam(required = false) Set<String> tags) {
+        return ragService.searchKnowledgeWithFilters(GatewayUserContext.requireUserId(), query, limit, tags);
     }
 }

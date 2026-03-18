@@ -16,10 +16,12 @@ public class ApplicationTest {
 
         assertEquals("knowledge-agent-rag", properties.getProperty("spring.application.name"));
         assertTrue(properties.getProperty("spring.datasource.url").contains("knowledge_agent"));
+        assertEquals("${ROCKETMQ_NAME_SERVER:localhost:9876}", properties.getProperty("rocketmq.name-server"));
         assertEquals("knowledge-rag", properties.getProperty("dubbo.application.name"));
         assertTrue(properties.getProperty("langchain4j.open-ai.embedding-model.dimensions").contains("MILVUS_DIMENSION"));
         assertEquals("${MILVUS_DIMENSION:1024}", properties.getProperty("milvus.cloud.dimension"));
         assertEquals("${DUBBO_CONFIG_CENTER_ADDRESS:N/A}", properties.getProperty("dubbo.config-center.address"));
+        assertEquals("${KNOWLEDGE_AGENT_KNOWLEDGE_ARCHIVED_TOPIC:knowledge-agent-knowledge-archived}", properties.getProperty("knowledge-agent.messaging.knowledge-archived-topic"));
     }
 
     private Properties loadYaml(String path) {

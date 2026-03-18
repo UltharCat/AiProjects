@@ -34,6 +34,11 @@ public class KnowledgeDTO implements Serializable {
     private String summary;
 
     /**
+     * Original or normalized source descriptor for the knowledge item.
+     */
+    private String source;
+
+    /**
      * Tags used for retrieval or filtering.
      */
     private Set<String> tags;
@@ -42,6 +47,21 @@ public class KnowledgeDTO implements Serializable {
      * Retrieval score for ranked results.
      */
     private Double score;
+
+    /**
+     * Citation content returned to the client.
+     */
+    private String citation;
+
+    /**
+     * Direct answer generated from the highest-confidence match.
+     */
+    private String directAnswer;
+
+    /**
+     * Segment text matched during retrieval.
+     */
+    private String matchedSegment;
 
     /**
      * Easiness factor used by the SM-2 algorithm.

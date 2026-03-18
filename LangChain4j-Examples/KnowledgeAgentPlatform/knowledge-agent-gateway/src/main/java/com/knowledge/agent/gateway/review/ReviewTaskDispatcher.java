@@ -1,17 +1,21 @@
 package com.knowledge.agent.gateway.review;
 
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.ReviewTaskBatchDTO;
 import com.knowledge.agent.api.dto.ReviewTaskDTO;
+import com.knowledge.agent.api.dto.ReviewTaskStatus;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
 import com.knowledge.agent.api.service.RagService;
 import com.knowledge.agent.common.exception.BizException;
 import com.knowledge.agent.common.resp.Result;
+import com.knowledge.agent.gateway.messaging.ReviewBatchEventPublisher;
 import com.knowledge.agent.gateway.model.ReviewTaskBatchResponse;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,10 +33,14 @@ public class ReviewTaskDispatcher {
 
     private final ReviewTaskBatchStore reviewTaskBatchStore;
 
+    private final ReviewBatchEventPublisher reviewBatchEventPublisher;
+
     public ReviewTaskDispatcher(ReviewTaskDeduplicator reviewTaskDeduplicator,
-                                ReviewTaskBatchStore reviewTaskBatchStore) {
+                                ReviewTaskBatchStore reviewTaskBatchStore,
+                                ReviewBatchEventPublisher reviewBatchEventPublisher) {
         this.reviewTaskDeduplicator = reviewTaskDeduplicator;
         this.reviewTaskBatchStore = reviewTaskBatchStore;
+        this.reviewBatchEventPublisher = reviewBatchEventPublisher;
     }
 
     public ReviewTaskBatchResponse dispatch(Long userId, Integer limit, ReviewTriggerSource triggerSource) {
@@ -50,18 +58,22 @@ public class ReviewTaskDispatcher {
                 .filter(dto -> reviewTaskDeduplicator.tryAcquire(triggerSource, userId, dto.getId()))
                 .map(dto -> toTask(dto, userId, triggerSource))
                 .collect(Collectors.toList());
+        LocalDateTime createdAt = LocalDateTime.now();
 
         ReviewTaskBatchResponse batch = ReviewTaskBatchResponse.builder()
+                .batchId(UUID.randomUUID().toString())
                 .userId(userId)
                 .triggerSource(triggerSource)
                 .requestedLimit(requestedLimit)
                 .dispatchedCount(tasks.size())
+                .createdAt(createdAt)
                 .tasks(tasks)
                 .build();
         if (triggerSource != ReviewTriggerSource.MANUAL) {
-            // 关键步骤：把登录/调度触发的批次缓存下来，后续可以按来源回查最近一次结果。
             reviewTaskBatchStore.saveBatch(batch);
         }
+        persistBatch(batch);
+        reviewBatchEventPublisher.publish(batch);
         return batch;
     }
 
@@ -73,8 +85,26 @@ public class ReviewTaskDispatcher {
                 .summary(dto.getSummary())
                 .dueAt(dto.getNextReviewDate())
                 .triggerSource(triggerSource)
-                .status("PENDING")
+                .status(triggerSource == ReviewTriggerSource.MANUAL ? ReviewTaskStatus.PENDING : ReviewTaskStatus.DISPATCHED)
                 .dedupKey(triggerSource + ":" + userId + ":" + dto.getId())
                 .build();
+    }
+
+    private void persistBatch(ReviewTaskBatchResponse batch) {
+        Result<Boolean> persistResult = ragService.saveReviewTaskBatch(ReviewTaskBatchDTO.builder()
+                .batchId(batch.batchId())
+                .userId(batch.userId())
+                .triggerSource(batch.triggerSource())
+                .requestedLimit(batch.requestedLimit())
+                .dispatchedCount(batch.dispatchedCount())
+                .createdAt(batch.createdAt())
+                .tasks(batch.tasks())
+                .build());
+        if (persistResult == null) {
+            throw new BizException(500, "RAG service did not persist review batch");
+        }
+        if (!Objects.equals(persistResult.getCode(), 200)) {
+            throw new BizException(persistResult.getCode(), persistResult.getMessage());
+        }
     }
 }

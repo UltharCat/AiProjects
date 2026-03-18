@@ -9,6 +9,8 @@ spring:
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:redis}
       timeout: ${REDIS_TIMEOUT:5s}
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
 dubbo:
   application:
     name: knowledge-agent-gateway
@@ -37,3 +39,9 @@ knowledge-agent:
       batch-limit: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_BATCH_LIMIT:5}
       initial-delay-ms: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_INITIAL_DELAY_MS:30000}
       fixed-delay-ms: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_FIXED_DELAY_MS:900000}
+  messaging:
+    enabled: ${KNOWLEDGE_AGENT_MESSAGING_ENABLED:false}
+    review-batch-topic: ${KNOWLEDGE_AGENT_REVIEW_BATCH_TOPIC:knowledge-agent-review-batch}
+    review-batch-consumer-group: ${KNOWLEDGE_AGENT_REVIEW_BATCH_CONSUMER_GROUP:knowledge-agent-gateway-review-consumer}
+    knowledge-archived-topic: ${KNOWLEDGE_AGENT_KNOWLEDGE_ARCHIVED_TOPIC:knowledge-agent-knowledge-archived}
+    knowledge-archived-consumer-group: ${KNOWLEDGE_AGENT_KNOWLEDGE_ARCHIVED_CONSUMER_GROUP:knowledge-agent-gateway-knowledge-consumer}

@@ -1,12 +1,12 @@
 # Gateway API 文档
 
-本文描述 `knowledge-agent-gateway` 当前对外暴露的登录、对话、检索、复习接口约定。
+本文描述 `knowledge-agent-gateway` 当前对外开放的登录、对话、检索与复习接口。
 
 ## 通用约定
 
 - Base URL: `http://localhost:8080`
-- 登录接口之外的所有接口都需要请求头 `Authorization: Bearer <accessToken>`
-- 统一响应结构：
+- 除登录接口外，其余接口都要求请求头 `Authorization: Bearer <accessToken>`
+- 统一响应格式：
 
 ```json
 {
@@ -16,7 +16,7 @@
 }
 ```
 
-- 统一错误结构：
+- 常见鉴权失败格式：
 
 ```json
 {
@@ -54,7 +54,7 @@
     "pendingReviewCount": 1,
     "pendingReviewTasks": [
       {
-        "taskId": "3cd3e0a8-25ef-4f48-9eb0-608c58bb9021",
+        "taskId": "task-1",
         "userId": 1,
         "knowledgeId": 99,
         "summary": "SM-2 overview",
@@ -70,9 +70,9 @@
 
 说明：
 
-- 登录成功后立即返回 access token
-- Gateway 会在登录后自动查询当前用户待复习任务
-- 登录触发的复习任务会经过去重窗口控制，避免短时间重复提醒
+- 登录成功后立即返回 access token。
+- Gateway 会在登录完成后同步派发当前用户的待复习任务。
+- 登录触发的复习任务会经过去重窗口控制，避免短时间内重复提醒。
 
 ## 2. 对话
 
@@ -90,16 +90,6 @@
 }
 ```
 
-响应体：
-
-```json
-{
-  "code": 200,
-  "message": "Success",
-  "data": "Let's start reviewing: explain SM-2 in your own words."
-}
-```
-
 ### 2.2 SSE 对话
 
 - Method: `GET`
@@ -107,7 +97,7 @@
 
 说明：
 
-- 当前实现为最小 SSE 能力，返回单条 `message` 事件后完成连接
+- 当前实现为最小 SSE 能力，返回单个 `message` 事件后完成连接。
 
 ### 2.3 强制切换状态
 
@@ -121,14 +111,16 @@
 - `REVIEW`
 - `SUMMARY`
 
-## 3. 知识检索
+## 3. 检索
 
 - Method: `GET`
-- Path: `/api/rag/search?query=sm2&limit=3`
+- Path: `/api/rag/search?query=sm2&limit=3&tags=memory&tags=review`
 
 说明：
 
-- `userId` 由 token 自动解析，不再允许客户端直接传入
+- `userId` 由 token 自动解析。
+- `tags` 为可选参数，支持多值过滤。
+- 单条知识结果会返回 `source`、`citation`、`directAnswer`、`matchedSegment` 等字段。
 
 ## 4. 复习任务
 
@@ -137,48 +129,22 @@
 - Method: `GET`
 - Path: `/api/reviews/pending?limit=5`
 
-响应体：
+返回的批次结果包含：
 
-```json
-{
-  "code": 200,
-  "message": "Success",
-  "data": {
-    "userId": 1,
-    "triggerSource": "MANUAL",
-    "requestedLimit": 5,
-    "dispatchedCount": 1,
-    "tasks": [
-      {
-        "taskId": "task-1",
-        "userId": 1,
-        "knowledgeId": 99,
-        "summary": "SM-2 overview",
-        "dueAt": "2026-03-18T09:00:00",
-        "triggerSource": "MANUAL",
-        "status": "PENDING",
-        "dedupKey": "MANUAL:1:99"
-      }
-    ]
-  }
-}
-```
+- `batchId`：复习批次唯一标识
+- `createdAt`：批次生成时间
+- `tasks`：本次派发的任务列表
 
-说明：
-
-- 手动查询不做去重，便于客户端主动拉取
-- 调度触发和登录触发复用同一批次契约 `ReviewTaskBatchResponse`
-
-### 4.2 查询最近一次调度生成结果
+### 4.2 查询最近一次调度结果
 
 - Method: `GET`
 - Path: `/api/reviews/scheduled/latest`
 
 说明：
 
-- 返回当前用户最近一次 `SCHEDULED` 来源的 review 批次
-- 当 Redis 可用时结果优先从 Redis 读取
-- 当 Redis 不可用时自动回退到当前节点内存缓存
+- 返回当前用户最近一次 `SCHEDULED` 来源的 review 批次。
+- 优先读取 RAG 持久化结果；若持久化结果不可用，则回退到 Redis 或内存中的最近批次缓存。
+
 ### 4.3 回写复习结果
 
 - Method: `PATCH`
@@ -195,7 +161,8 @@
 
 说明：
 
-- `quality` 取值范围遵循当前 SM-2 评分输入 `0..5`
+- `quality` 取值范围遵循当前 SM-2 评分输入 `0..5`。
+- 回写成功后会同步把对应持久化 review 任务标记为 `COMPLETED`。
 
 ## 5. 鉴权约定
 
@@ -205,13 +172,19 @@
 
 ## 6. Review 调度约定
 
-当前阶段已提供调度所需的任务派发契约：
+当前 review 派发相关契约：
 
 - `ReviewTaskDTO`
 - `ReviewTaskBatchResponse`
 - `ReviewTriggerSource`：`LOGIN`、`MANUAL`、`SCHEDULED`
 
-当前阶段尚未实现：
+当前已补齐的能力：
 
-- Review 任务持久化表
-- 多实例下更完整的投递确认/消费机制
+- Review 批次生成后会持久化到 `review_task_record`
+- 最近调度批次支持从持久化层回查
+- 复习结果回写后会同步更新任务状态
+
+当前仍待继续完善的部分：
+
+- 多实例场景下更完整的投递确认与消费语义
+- 基于事件的异步审计和重试策略

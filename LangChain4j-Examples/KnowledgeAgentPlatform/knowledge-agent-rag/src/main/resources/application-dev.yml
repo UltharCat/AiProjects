@@ -14,6 +14,8 @@ spring:
     locations: classpath:db/migration
     table: flyway_schema_history_rag
     baseline-version: 0
+rocketmq:
+  name-server: ${ROCKETMQ_NAME_SERVER:localhost:9876}
 langchain4j:
   open-ai:
     embedding-model:
@@ -46,3 +48,10 @@ dubbo:
     use-as-metadata-center: false
   config-center:
     address: ${DUBBO_CONFIG_CENTER_ADDRESS:N/A}
+knowledge-agent:
+  messaging:
+    enabled: ${KNOWLEDGE_AGENT_MESSAGING_ENABLED:false}
+    review-batch-topic: ${KNOWLEDGE_AGENT_REVIEW_BATCH_TOPIC:knowledge-agent-review-batch}
+    review-batch-consumer-group: ${KNOWLEDGE_AGENT_REVIEW_BATCH_CONSUMER_GROUP:knowledge-agent-rag-review-consumer}
+    knowledge-archived-topic: ${KNOWLEDGE_AGENT_KNOWLEDGE_ARCHIVED_TOPIC:knowledge-agent-knowledge-archived}
+    knowledge-archived-consumer-group: ${KNOWLEDGE_AGENT_KNOWLEDGE_ARCHIVED_CONSUMER_GROUP:knowledge-agent-rag-knowledge-consumer}

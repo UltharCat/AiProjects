@@ -16,6 +16,10 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
         <!-- 1.内部依赖 -->
         <dependency>
             <groupId>com.knowledge.agent</groupId>
