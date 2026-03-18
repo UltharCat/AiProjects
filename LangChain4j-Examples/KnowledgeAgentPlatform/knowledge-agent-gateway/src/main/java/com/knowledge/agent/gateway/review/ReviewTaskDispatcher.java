@@ -1,6 +1,7 @@
 package com.knowledge.agent.gateway.review;
 
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.ReviewTaskBatchDTO;
 import com.knowledge.agent.api.dto.ReviewTaskDTO;
 import com.knowledge.agent.api.dto.ReviewTaskStatus;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -56,17 +58,21 @@ public class ReviewTaskDispatcher {
                 .filter(dto -> reviewTaskDeduplicator.tryAcquire(triggerSource, userId, dto.getId()))
                 .map(dto -> toTask(dto, userId, triggerSource))
                 .collect(Collectors.toList());
+        LocalDateTime createdAt = LocalDateTime.now();
 
         ReviewTaskBatchResponse batch = ReviewTaskBatchResponse.builder()
+                .batchId(UUID.randomUUID().toString())
                 .userId(userId)
                 .triggerSource(triggerSource)
                 .requestedLimit(requestedLimit)
                 .dispatchedCount(tasks.size())
+                .createdAt(createdAt)
                 .tasks(tasks)
                 .build();
         if (triggerSource != ReviewTriggerSource.MANUAL) {
             reviewTaskBatchStore.saveBatch(batch);
         }
+        persistBatch(batch);
         reviewBatchEventPublisher.publish(batch);
         return batch;
     }
@@ -82,5 +88,23 @@ public class ReviewTaskDispatcher {
                 .status(triggerSource == ReviewTriggerSource.MANUAL ? ReviewTaskStatus.PENDING : ReviewTaskStatus.DISPATCHED)
                 .dedupKey(triggerSource + ":" + userId + ":" + dto.getId())
                 .build();
+    }
+
+    private void persistBatch(ReviewTaskBatchResponse batch) {
+        Result<Boolean> persistResult = ragService.saveReviewTaskBatch(ReviewTaskBatchDTO.builder()
+                .batchId(batch.batchId())
+                .userId(batch.userId())
+                .triggerSource(batch.triggerSource())
+                .requestedLimit(batch.requestedLimit())
+                .dispatchedCount(batch.dispatchedCount())
+                .createdAt(batch.createdAt())
+                .tasks(batch.tasks())
+                .build());
+        if (persistResult == null) {
+            throw new BizException(500, "RAG service did not persist review batch");
+        }
+        if (!Objects.equals(persistResult.getCode(), 200)) {
+            throw new BizException(persistResult.getCode(), persistResult.getMessage());
+        }
     }
 }

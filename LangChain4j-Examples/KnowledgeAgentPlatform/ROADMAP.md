@@ -154,7 +154,7 @@ Completion criteria:
 - [x] `ReviewTask` model
 - [x] Login-triggered review reminder
 - [x] Scheduled review list generation entrypoint
-- [-] Redis-backed dedup, batch cache, and scheduler loop with event publication
+- [-] Redis-backed dedup, durable batch persistence, and scheduler loop with event publication
 - [x] Agent-driven review questioning within the conversation flow
 - [x] Review result write-back
 
@@ -162,7 +162,8 @@ Completion criteria:
 
 - The conversational review loop exists for manually triggered review sessions
 - Login-triggered review dispatch, scheduler registration, and dedup hooks now exist
-- This phase remains incomplete until review task persistence is backed by durable storage and multi-instance delivery semantics are strengthened
+- Review task batches are now persisted durably and can be read back by the latest scheduled-batch query
+- This phase remains incomplete until multi-instance delivery semantics are strengthened beyond the current Redis + database baseline
 
 ## Phase 7: Enhancements and Long-Term Direction
 
@@ -210,19 +211,19 @@ Completion criteria:
 
 ## Next Implementation Order
 
-1. Add durable review task persistence and clearer multi-instance delivery semantics
+1. Strengthen multi-instance delivery semantics on top of the current durable review-task persistence
 2. Extend LangChain4j runtime integration from teaching/summary fallback to fuller tool-driven orchestration
 3. Keep Phase 7 deferred
 
 Rationale:
 
 - The MVP path is now available end-to-end, so the highest-value gaps are hardening and automation
-- Review triggering now has login integration, scheduler execution, Redis-first dedup/batch caching, and event publication hooks
+- Review triggering now has login integration, scheduler execution, Redis-first dedup/batch caching, durable batch persistence, and event publication hooks
 - Agent Core now has initial LangChain4j runtime integration, but fuller tool-driven orchestration is still ahead
 
 ## Next Stage Development Goals
 
-Current next-stage focus: finish review-task durability and strengthen the current LangChain4j-powered orchestration layer.
+Current next-stage focus: strengthen the now-persisted review-task delivery semantics and improve the current LangChain4j-powered orchestration layer.
 
 ### Goal A: Keep the Gateway hardening baseline stable
 
@@ -233,9 +234,8 @@ Current next-stage focus: finish review-task durability and strengthen the curre
 
 ### Goal B: Turn review flow from manual invocation into triggerable capability
 
-- Add durable review task persistence for login/manual/scheduled batches
-- Decide whether review task persistence should live in Gateway, RAG, or a dedicated scheduler module
-- Evolve Redis usage from dedup/cache into clearer delivery semantics
+- Keep durable review task persistence stable for login/manual/scheduled batches
+- Evolve Redis usage from dedup/cache into clearer delivery semantics across multiple instances
 - Keep login-triggered pending review lookup aligned with scheduled dispatch behavior
 
 ### Goal C: Keep Agent Core stable while deferring full model execution
@@ -250,12 +250,13 @@ Current next-stage focus: finish review-task durability and strengthen the curre
 - The project exposes a documented external API surface for login/chat/search/review
 - A user can trigger pending review retrieval immediately after login
 - Review trigger and scheduling contracts are persisted durably enough for the following stage
+- Latest scheduled review batches can be recalled from durable storage without relying solely on cache
 - `mvn test` stays green after each hardening change
 
 ## Current Evidence Pointers
 
 - User side: `SysUser`, `SysUserMapper`, `SysUserServiceImpl`, user Flyway script
-- RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`, `V3__add_knowledge_source.sql`
+- RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `ReviewTaskRecord`, `ReviewTaskRecordMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`, `V3__add_knowledge_source.sql`, `V4__add_review_task_record.sql`
 - Agent Core side: `ConversationState`, `StateContext`, `AgentServiceImpl`, `AgentPromptService`, `DubboAgentToolRouter`, `LangChain4jAgentRuntime`, `RedisConversationStore`
 - Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`, `GatewayReviewController`, auth interceptor/config, review dispatcher, scheduler, Redis-backed dedup/batch store, review-batch event publisher
 - Documentation: `docs/gateway-api.zh-CN.md`

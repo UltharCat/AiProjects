@@ -4,6 +4,7 @@ import com.knowledge.agent.api.dto.ReviewTaskDTO;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
 import lombok.Builder;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -11,10 +12,12 @@ import java.util.List;
  */
 @Builder
 public record ReviewTaskBatchResponse(
+        String batchId,
         Long userId,
         ReviewTriggerSource triggerSource,
         Integer requestedLimit,
         Integer dispatchedCount,
+        LocalDateTime createdAt,
         List<ReviewTaskDTO> tasks
 ) {
 }

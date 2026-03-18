@@ -8,13 +8,19 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.ReviewTaskBatchDTO;
+import com.knowledge.agent.api.dto.ReviewTaskDTO;
+import com.knowledge.agent.api.dto.ReviewTaskStatus;
+import com.knowledge.agent.api.dto.ReviewTriggerSource;
 import com.knowledge.agent.api.service.RagService;
 import com.knowledge.agent.common.exception.BizException;
 import com.knowledge.agent.common.resp.Result;
 import com.knowledge.agent.common.utils.EbbinghausUtils;
 import com.knowledge.agent.rag.config.MilvusHybridRetriever;
 import com.knowledge.agent.rag.entity.KnowledgeCard;
+import com.knowledge.agent.rag.entity.ReviewTaskRecord;
 import com.knowledge.agent.rag.mapper.KnowledgeCardMapper;
+import com.knowledge.agent.rag.mapper.ReviewTaskRecordMapper;
 import com.knowledge.agent.rag.messaging.KnowledgeArchivedEventPublisher;
 import dev.langchain4j.data.document.Document;
 import dev.langchain4j.data.document.Metadata;
@@ -53,15 +59,18 @@ public class RagServiceImpl implements RagService {
     private final EmbeddingModel embeddingModel;
     private final MilvusClientV2 milvusClientV2;
     private final KnowledgeCardMapper knowledgeCardMapper;
+    private final ReviewTaskRecordMapper reviewTaskRecordMapper;
     private final KnowledgeArchivedEventPublisher knowledgeArchivedEventPublisher;
 
     public RagServiceImpl(EmbeddingModel embeddingModel,
                           MilvusClientV2 milvusClientV2,
                           KnowledgeCardMapper knowledgeCardMapper,
+                          ReviewTaskRecordMapper reviewTaskRecordMapper,
                           KnowledgeArchivedEventPublisher knowledgeArchivedEventPublisher) {
         this.embeddingModel = embeddingModel;
         this.milvusClientV2 = milvusClientV2;
         this.knowledgeCardMapper = knowledgeCardMapper;
+        this.reviewTaskRecordMapper = reviewTaskRecordMapper;
         this.knowledgeArchivedEventPublisher = knowledgeArchivedEventPublisher;
     }
 
@@ -253,6 +262,78 @@ public class RagServiceImpl implements RagService {
         return Result.success(ids);
     }
 
+    @Override
+    @Transactional
+    public Result<Boolean> saveReviewTaskBatch(ReviewTaskBatchDTO batch) {
+        if (batch == null || StrUtil.isBlank(batch.getBatchId()) || batch.getUserId() == null) {
+            return Result.error(400, "Invalid review batch payload");
+        }
+        List<ReviewTaskDTO> tasks = batch.getTasks() == null ? Collections.emptyList() : batch.getTasks();
+        reviewTaskRecordMapper.delete(Wrappers.<ReviewTaskRecord>lambdaQuery()
+                .eq(ReviewTaskRecord::getBatchId, batch.getBatchId()));
+        for (ReviewTaskDTO task : tasks) {
+            if (task == null || StrUtil.isBlank(task.getTaskId()) || task.getKnowledgeId() == null) {
+                continue;
+            }
+            reviewTaskRecordMapper.insert(ReviewTaskRecord.builder()
+                    .taskId(task.getTaskId())
+                    .batchId(batch.getBatchId())
+                    .userId(batch.getUserId())
+                    .knowledgeId(task.getKnowledgeId())
+                    .summary(task.getSummary())
+                    .dueAt(task.getDueAt())
+                    .triggerSource(task.getTriggerSource() == null ? batch.getTriggerSource().name() : task.getTriggerSource().name())
+                    .status(task.getStatus() == null ? ReviewTaskStatus.PENDING.name() : task.getStatus().name())
+                    .dedupKey(task.getDedupKey())
+                    .requestedLimit(batch.getRequestedLimit())
+                    .batchCreatedAt(batch.getCreatedAt() == null ? LocalDateTime.now() : batch.getCreatedAt())
+                    .build());
+        }
+        return Result.success(Boolean.TRUE);
+    }
+
+    @Override
+    public Result<ReviewTaskBatchDTO> findLatestReviewTaskBatch(Long userId, ReviewTriggerSource triggerSource) {
+        if (userId == null || triggerSource == null) {
+            return Result.success(null);
+        }
+        ReviewTaskRecord latestRecord = reviewTaskRecordMapper.selectOne(Wrappers.<ReviewTaskRecord>lambdaQuery()
+                .eq(ReviewTaskRecord::getUserId, userId)
+                .eq(ReviewTaskRecord::getTriggerSource, triggerSource.name())
+                .orderByDesc(ReviewTaskRecord::getBatchCreatedAt)
+                .last("limit 1"));
+        if (latestRecord == null) {
+            return Result.success(null);
+        }
+        List<ReviewTaskRecord> records = reviewTaskRecordMapper.selectList(Wrappers.<ReviewTaskRecord>lambdaQuery()
+                .eq(ReviewTaskRecord::getBatchId, latestRecord.getBatchId())
+                .orderByAsc(ReviewTaskRecord::getCreateTime));
+        return Result.success(toReviewTaskBatchDTO(latestRecord, records));
+    }
+
+    @Override
+    @Transactional
+    public Result<Boolean> updateReviewTaskStatus(Long userId, Long knowledgeId, ReviewTaskStatus status) {
+        if (userId == null || knowledgeId == null || status == null) {
+            return Result.error(400, "Invalid review task status update");
+        }
+        List<ReviewTaskRecord> records = reviewTaskRecordMapper.selectList(Wrappers.<ReviewTaskRecord>lambdaQuery()
+                .eq(ReviewTaskRecord::getUserId, userId)
+                .eq(ReviewTaskRecord::getKnowledgeId, knowledgeId)
+                .in(ReviewTaskRecord::getStatus, ReviewTaskStatus.PENDING.name(), ReviewTaskStatus.DISPATCHED.name())
+                .orderByDesc(ReviewTaskRecord::getBatchCreatedAt));
+        if (CollUtil.isEmpty(records)) {
+            return Result.success(Boolean.FALSE);
+        }
+        for (ReviewTaskRecord record : records) {
+            reviewTaskRecordMapper.updateById(ReviewTaskRecord.builder()
+                    .taskId(record.getTaskId())
+                    .status(status.name())
+                    .build());
+        }
+        return Result.success(Boolean.TRUE);
+    }
+
     private KnowledgeDTO toKnowledgeDTO(KnowledgeCard card, Long docId, String fallbackSummary, Integer rankIndex) {
         if (card == null && StrUtil.isBlank(fallbackSummary)) {
             return null;
@@ -315,5 +396,29 @@ public class RagServiceImpl implements RagService {
 
     private String buildCitation(String source, Long docId) {
         return "%s#%s".formatted(normalizeSource(source), docId);
+    }
+
+    private ReviewTaskBatchDTO toReviewTaskBatchDTO(ReviewTaskRecord latestRecord, List<ReviewTaskRecord> records) {
+        List<ReviewTaskDTO> tasks = records.stream()
+                .map(record -> ReviewTaskDTO.builder()
+                        .taskId(record.getTaskId())
+                        .userId(record.getUserId())
+                        .knowledgeId(record.getKnowledgeId())
+                        .summary(record.getSummary())
+                        .dueAt(record.getDueAt())
+                        .triggerSource(ReviewTriggerSource.valueOf(record.getTriggerSource()))
+                        .status(ReviewTaskStatus.valueOf(record.getStatus()))
+                        .dedupKey(record.getDedupKey())
+                        .build())
+                .toList();
+        return ReviewTaskBatchDTO.builder()
+                .batchId(latestRecord.getBatchId())
+                .userId(latestRecord.getUserId())
+                .triggerSource(ReviewTriggerSource.valueOf(latestRecord.getTriggerSource()))
+                .requestedLimit(latestRecord.getRequestedLimit())
+                .dispatchedCount(tasks.size())
+                .createdAt(latestRecord.getBatchCreatedAt())
+                .tasks(tasks)
+                .build();
     }
 }

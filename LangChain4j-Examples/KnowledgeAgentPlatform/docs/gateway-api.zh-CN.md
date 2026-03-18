@@ -5,7 +5,7 @@
 ## 通用约定
 
 - Base URL: `http://localhost:8080`
-- 除登录接口外，其余接口都需要请求头 `Authorization: Bearer <accessToken>`
+- 除登录接口外，其余接口都要求请求头 `Authorization: Bearer <accessToken>`
 - 统一响应格式：
 
 ```json
@@ -16,7 +16,7 @@
 }
 ```
 
-- 常见错误格式：
+- 常见鉴权失败格式：
 
 ```json
 {
@@ -120,7 +120,7 @@
 
 - `userId` 由 token 自动解析。
 - `tags` 为可选参数，支持多值过滤。
-- 响应中的单条知识结果会返回 `source`、`citation`、`directAnswer` 与 `matchedSegment` 等字段。
+- 单条知识结果会返回 `source`、`citation`、`directAnswer`、`matchedSegment` 等字段。
 
 ## 4. 复习任务
 
@@ -128,6 +128,12 @@
 
 - Method: `GET`
 - Path: `/api/reviews/pending?limit=5`
+
+返回的批次结果包含：
+
+- `batchId`：复习批次唯一标识
+- `createdAt`：批次生成时间
+- `tasks`：本次派发的任务列表
 
 ### 4.2 查询最近一次调度结果
 
@@ -137,7 +143,7 @@
 说明：
 
 - 返回当前用户最近一次 `SCHEDULED` 来源的 review 批次。
-- Redis 可用时优先从 Redis 读取；不可用时自动回退到当前节点内存缓存。
+- 优先读取 RAG 持久化结果；若持久化结果不可用，则回退到 Redis 或内存中的最近批次缓存。
 
 ### 4.3 回写复习结果
 
@@ -156,6 +162,7 @@
 说明：
 
 - `quality` 取值范围遵循当前 SM-2 评分输入 `0..5`。
+- 回写成功后会同步把对应持久化 review 任务标记为 `COMPLETED`。
 
 ## 5. 鉴权约定
 
@@ -171,7 +178,13 @@
 - `ReviewTaskBatchResponse`
 - `ReviewTriggerSource`：`LOGIN`、`MANUAL`、`SCHEDULED`
 
-当前仍未完全持久化的部分：
+当前已补齐的能力：
 
-- Review 任务持久化表
-- 多实例场景下更完整的投递确认和消费语义
+- Review 批次生成后会持久化到 `review_task_record`
+- 最近调度批次支持从持久化层回查
+- 复习结果回写后会同步更新任务状态
+
+当前仍待继续完善的部分：
+
+- 多实例场景下更完整的投递确认与消费语义
+- 基于事件的异步审计和重试策略

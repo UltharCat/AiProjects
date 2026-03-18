@@ -1,6 +1,7 @@
 package com.knowledge.agent.gateway.controller;
 
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.ReviewTaskBatchDTO;
 import com.knowledge.agent.api.dto.ReviewTaskDTO;
 import com.knowledge.agent.api.dto.ReviewTaskStatus;
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
@@ -20,6 +21,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class GatewayReviewControllerTest {
@@ -34,6 +36,7 @@ class GatewayReviewControllerTest {
         ReviewTaskDispatcher dispatcher = mock(ReviewTaskDispatcher.class);
         ReviewTaskBatchStore batchStore = mock(ReviewTaskBatchStore.class);
         when(dispatcher.dispatch(1L, 5, ReviewTriggerSource.MANUAL)).thenReturn(ReviewTaskBatchResponse.builder()
+                .batchId("batch-1")
                 .userId(1L)
                 .triggerSource(ReviewTriggerSource.MANUAL)
                 .requestedLimit(5)
@@ -72,16 +75,20 @@ class GatewayReviewControllerTest {
 
         Result<Void> result = controller.updateReviewStatus(new ReviewStatusUpdateRequest(10L, 4));
         assertEquals(200, result.getCode());
+        verify(ragService).updateReviewTaskStatus(1L, 10L, ReviewTaskStatus.COMPLETED);
     }
 
     @Test
     void shouldReturnLatestScheduledBatch() {
+        RagService ragService = mock(RagService.class);
         ReviewTaskBatchStore batchStore = mock(ReviewTaskBatchStore.class);
-        when(batchStore.findLatest(1L, ReviewTriggerSource.SCHEDULED)).thenReturn(Optional.of(ReviewTaskBatchResponse.builder()
+        when(ragService.findLatestReviewTaskBatch(1L, ReviewTriggerSource.SCHEDULED)).thenReturn(Result.success(ReviewTaskBatchDTO.builder()
+                .batchId("batch-2")
                 .userId(1L)
                 .triggerSource(ReviewTriggerSource.SCHEDULED)
                 .requestedLimit(5)
                 .dispatchedCount(1)
+                .createdAt(java.time.LocalDateTime.of(2026, 3, 18, 10, 0))
                 .tasks(java.util.List.of(ReviewTaskDTO.builder()
                         .taskId("task-2")
                         .userId(1L)
@@ -94,10 +101,12 @@ class GatewayReviewControllerTest {
                 .build()));
 
         GatewayReviewController controller = new GatewayReviewController(mock(ReviewTaskDispatcher.class), batchStore);
+        ReflectionTestUtils.setField(controller, "ragService", ragService);
         GatewayUserContext.setUserId(1L);
 
         Result<ReviewTaskBatchResponse> result = controller.latestScheduledBatch();
         assertEquals(200, result.getCode());
         assertEquals(ReviewTriggerSource.SCHEDULED, result.getData().triggerSource());
+        assertEquals("batch-2", result.getData().batchId());
     }
 }
