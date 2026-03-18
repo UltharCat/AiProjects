@@ -13,15 +13,15 @@ import com.knowledge.agent.gateway.model.ReviewTaskBatchResponse;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
-import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * Builds Gateway-facing review task batches from due knowledge cards.
+ * 将到期知识卡片转换成 Gateway 可消费的复习任务批次。
  */
 @Service
 public class ReviewTaskDispatcher {
@@ -45,6 +45,8 @@ public class ReviewTaskDispatcher {
 
     public ReviewTaskBatchResponse dispatch(Long userId, Integer limit, ReviewTriggerSource triggerSource) {
         int requestedLimit = limit == null ? 5 : Math.max(1, limit);
+
+        // 第一步：从 RAG 中取出到期知识卡片，作为待派发任务的候选集。
         Result<List<KnowledgeDTO>> result = ragService.listPendingReviews(userId, requestedLimit);
         if (result == null) {
             throw new BizException(500, "RAG service returned no response");
@@ -53,6 +55,7 @@ public class ReviewTaskDispatcher {
             throw new BizException(result.getCode(), result.getMessage());
         }
 
+        // 第二步：先做去重，再把知识卡片映射成对外复习任务。
         List<ReviewTaskDTO> tasks = result.getData() == null ? Collections.emptyList() : result.getData().stream()
                 .filter(dto -> dto.getId() != null)
                 .filter(dto -> reviewTaskDeduplicator.tryAcquire(triggerSource, userId, dto.getId()))
@@ -70,8 +73,11 @@ public class ReviewTaskDispatcher {
                 .tasks(tasks)
                 .build();
         if (triggerSource != ReviewTriggerSource.MANUAL) {
+            // 非手动批次会先进入缓存，便于快速查询最近一次调度结果。
             reviewTaskBatchStore.saveBatch(batch);
         }
+
+        // 同时写入持久化层，避免最近批次查询完全依赖缓存。
         persistBatch(batch);
         reviewBatchEventPublisher.publish(batch);
         return batch;

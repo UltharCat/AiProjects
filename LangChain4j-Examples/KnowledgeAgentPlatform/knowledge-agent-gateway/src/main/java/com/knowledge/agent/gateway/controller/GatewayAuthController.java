@@ -19,6 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.Objects;
 
+/**
+ * 网关登录入口，负责统一登录返回体并触发登录后的待复习任务派发。
+ */
 @RestController
 @RequestMapping("/api/auth")
 public class GatewayAuthController {
@@ -40,6 +43,7 @@ public class GatewayAuthController {
 
     @PostMapping("/login")
     public Result<GatewayLoginResponse> login(@RequestBody UserLoginRequest request) {
+        // 第一步：委托 User 服务完成用户校验与 token 签发。
         Result<String> loginResult = userService.login(request);
         if (loginResult == null) {
             throw new BizException(500, "User service returned no response");
@@ -48,8 +52,11 @@ public class GatewayAuthController {
             throw new BizException(loginResult.getCode(), loginResult.getMessage());
         }
 
+        // 第二步：从 token 中解析用户身份，并同步派发登录触发的待复习任务。
         AuthTokenClaims claims = JwtTokenUtils.parseAndValidate(loginResult.getData(), tokenIssuer, tokenSecret);
         ReviewTaskBatchResponse reviewTasks = reviewTaskDispatcher.dispatch(claims.userId(), 5, ReviewTriggerSource.LOGIN);
+
+        // 第三步：统一封装登录返回体，附带待复习任务摘要。
         return Result.success(GatewayLoginResponse.builder()
                 .userId(claims.userId())
                 .accessToken(loginResult.getData())

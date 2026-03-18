@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Periodically generates scheduled review batches for active users.
+ * 定时为活跃用户生成复习批次。
  */
 @Slf4j
 @Component
@@ -55,7 +55,7 @@ public class ReviewTaskScheduler {
 
         List<Long> userIds = result.getData() == null ? Collections.emptyList() : result.getData();
         for (Long userId : userIds) {
-            // 关键步骤：调度器逐个用户生成 SCHEDULED 批次，真正把“契约”推进成“可运行任务”。
+            // 关键步骤：调度器逐个用户生成 SCHEDULED 批次，把到期知识卡片转换成可执行的复习任务。
             ReviewTaskBatchResponse batch = reviewTaskDispatcher.dispatch(userId, batchLimit, ReviewTriggerSource.SCHEDULED);
             if (batch.dispatchedCount() > 0) {
                 log.info("Generated scheduled review batch for userId={}, taskCount={}", userId, batch.dispatchedCount());

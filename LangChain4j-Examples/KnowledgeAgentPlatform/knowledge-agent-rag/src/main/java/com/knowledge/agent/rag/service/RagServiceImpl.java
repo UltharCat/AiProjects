@@ -48,6 +48,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * RAG 服务实现，负责知识归档、检索、复习更新和复习批次持久化。
+ */
 @Slf4j
 @Service
 @DubboService
@@ -80,6 +83,8 @@ public class RagServiceImpl implements RagService {
         if (dto == null || StrUtil.isBlank(dto.getSummary())) {
             return Result.error(400, "Invalid knowledge payload");
         }
+
+        // 统一清洗摘要、来源和标签，保证写入 Milvus 与 MySQL 的元数据一致。
         dto.setSummary(normalizeSummary(dto.getSummary()));
         dto.setSource(normalizeSource(dto.getSource()));
         dto.setTags(normalizeTags(dto.getTags()));
@@ -93,11 +98,13 @@ public class RagServiceImpl implements RagService {
                     .collect(Collectors.toCollection(LinkedHashSet::new));
             for (Long id : docIds) {
                 dto.setId(id);
+                // 命中已有文档时沿用既有 doc_id，执行增量更新。
                 saveMilvusKnowledge(dto);
                 upsertKnowledgeCard(dto);
                 knowledgeArchivedEventPublisher.publish(dto);
             }
         } else {
+            // 没有命中时生成新的知识 ID，完成首次入库。
             dto.setId(IdUtil.getSnowflakeNextId());
             saveMilvusKnowledge(dto);
             upsertKnowledgeCard(dto);
@@ -247,6 +254,8 @@ public class RagServiceImpl implements RagService {
         if (CollUtil.isEmpty(documents)) {
             return Result.success(Collections.emptyList());
         }
+
+        // 当前批量导入仍采用串行同步方式，优先保持实现简单和结果可追踪。
         List<Long> ids = documents.stream()
                 .filter(Objects::nonNull)
                 .map(document -> {
@@ -269,6 +278,8 @@ public class RagServiceImpl implements RagService {
             return Result.error(400, "Invalid review batch payload");
         }
         List<ReviewTaskDTO> tasks = batch.getTasks() == null ? Collections.emptyList() : batch.getTasks();
+
+        // 批次重写前先清理同一 batchId 的旧记录，避免持久化结果重复。
         reviewTaskRecordMapper.delete(Wrappers.<ReviewTaskRecord>lambdaQuery()
                 .eq(ReviewTaskRecord::getBatchId, batch.getBatchId()));
         for (ReviewTaskDTO task : tasks) {
@@ -297,6 +308,8 @@ public class RagServiceImpl implements RagService {
         if (userId == null || triggerSource == null) {
             return Result.success(null);
         }
+
+        // 先确定最近的批次，再按 batchId 拉回该批次下的全部任务。
         ReviewTaskRecord latestRecord = reviewTaskRecordMapper.selectOne(Wrappers.<ReviewTaskRecord>lambdaQuery()
                 .eq(ReviewTaskRecord::getUserId, userId)
                 .eq(ReviewTaskRecord::getTriggerSource, triggerSource.name())
@@ -317,6 +330,8 @@ public class RagServiceImpl implements RagService {
         if (userId == null || knowledgeId == null || status == null) {
             return Result.error(400, "Invalid review task status update");
         }
+
+        // 仅更新当前仍处于待处理阶段的任务，避免覆盖历史完成记录。
         List<ReviewTaskRecord> records = reviewTaskRecordMapper.selectList(Wrappers.<ReviewTaskRecord>lambdaQuery()
                 .eq(ReviewTaskRecord::getUserId, userId)
                 .eq(ReviewTaskRecord::getKnowledgeId, knowledgeId)

@@ -8,14 +8,29 @@ import java.time.Instant;
 import java.util.Set;
 
 /**
- * Event emitted after knowledge content has been archived successfully.
+ * 知识归档成功后发布的事件。
  */
 @Builder
 public record KnowledgeArchivedEvent(
+        /**
+         * 归档后的知识 ID。
+         */
         Long knowledgeId,
+        /**
+         * 知识所属用户 ID。
+         */
         Long userId,
+        /**
+         * 知识来源。
+         */
         String source,
+        /**
+         * 知识标签集合。
+         */
         Set<String> tags,
+        /**
+         * 事件发生时间。
+         */
         Instant occurredAt
 ) implements Serializable {
 

@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.util.Set;
 
 /**
- * Core knowledge transfer object shared between Agent and RAG modules.
+ * 知识数据传输对象，用于 Agent、RAG、Gateway 之间共享知识卡片信息。
  */
 @Data
 @Builder
@@ -19,67 +19,67 @@ public class KnowledgeDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * Vector document id associated with Milvus content.
+     * 知识文档唯一标识，对应 Milvus 与 MySQL 中的同一条知识记录。
      */
     private Long id;
 
     /**
-     * Owner user id.
+     * 知识所属用户 ID。
      */
     private Long userId;
 
     /**
-     * Summarized knowledge content.
+     * 知识摘要内容。
      */
     private String summary;
 
     /**
-     * Original or normalized source descriptor for the knowledge item.
+     * 知识来源，例如手动录入、导入文件或对话总结。
      */
     private String source;
 
     /**
-     * Tags used for retrieval or filtering.
+     * 用于检索和过滤的标签集合。
      */
     private Set<String> tags;
 
     /**
-     * Retrieval score for ranked results.
+     * 检索结果得分。
      */
     private Double score;
 
     /**
-     * Citation content returned to the client.
+     * 返回给客户端的引用标识。
      */
     private String citation;
 
     /**
-     * Direct answer generated from the highest-confidence match.
+     * 在高置信命中时直接返回的答案。
      */
     private String directAnswer;
 
     /**
-     * Segment text matched during retrieval.
+     * 检索命中的文本片段。
      */
     private String matchedSegment;
 
     /**
-     * Easiness factor used by the SM-2 algorithm.
+     * SM-2 复习算法中的易度因子。
      */
     private Double easinessFactor;
 
     /**
-     * Review interval in days.
+     * 下一次复习前的间隔天数。
      */
     private Integer intervalDays;
 
     /**
-     * Review repetition count.
+     * 已成功复习的重复次数。
      */
     private Integer repetition;
 
     /**
-     * Scheduled time for the next review.
+     * 下一次复习时间。
      */
     private LocalDateTime nextReviewDate;
 }

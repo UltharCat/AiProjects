@@ -23,6 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * review 相关对外接口，包括手动获取批次、查询最近调度结果和回写复习状态。
+ */
 @RestController
 @RequestMapping("/api/reviews")
 public class GatewayReviewController {
@@ -52,10 +55,14 @@ public class GatewayReviewController {
     @GetMapping("/scheduled/latest")
     public Result<ReviewTaskBatchResponse> latestScheduledBatch() {
         Long userId = GatewayUserContext.requireUserId();
+
+        // 优先读取持久化批次，降低最近调度结果对缓存命中的依赖。
         Result<ReviewTaskBatchDTO> persistedResult = ragService.findLatestReviewTaskBatch(userId, ReviewTriggerSource.SCHEDULED);
         if (persistedResult != null && Objects.equals(persistedResult.getCode(), 200) && persistedResult.getData() != null) {
             return Result.success(toResponse(persistedResult.getData()));
         }
+
+        // 持久化批次缺失时，再退回到当前运行时缓存。
         return Result.success(reviewTaskBatchStore.findLatest(
                 userId,
                 ReviewTriggerSource.SCHEDULED
@@ -72,6 +79,8 @@ public class GatewayReviewController {
     @PatchMapping("/status")
     public Result<Void> updateReviewStatus(@RequestBody ReviewStatusUpdateRequest request) {
         Long userId = GatewayUserContext.requireUserId();
+
+        // 先校验知识项是否属于当前用户的待复习集合，避免越权写回。
         Result<List<KnowledgeDTO>> pendingReviews = ragService.listPendingReviews(userId, 200);
         boolean allowed = pendingReviews != null
                 && Objects.equals(pendingReviews.getCode(), 200)
@@ -80,10 +89,13 @@ public class GatewayReviewController {
         if (!allowed) {
             throw new BizException(403, "Review item is not available for the current user");
         }
+
         Result<Void> updateResult = ragService.updateReviewStatus(request.knowledgeId(), request.quality());
         if (!Objects.equals(updateResult.getCode(), 200)) {
             return updateResult;
         }
+
+        // 复习参数更新成功后，再同步推进持久化任务状态。
         ragService.updateReviewTaskStatus(userId, request.knowledgeId(), ReviewTaskStatus.COMPLETED);
         return updateResult;
     }
