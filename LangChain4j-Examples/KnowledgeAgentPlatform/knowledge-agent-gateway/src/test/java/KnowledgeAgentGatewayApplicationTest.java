@@ -19,6 +19,8 @@ public class KnowledgeAgentGatewayApplicationTest {
         assertEquals("knowledge-agent-gateway", dev.getProperty("dubbo.application.name"));
         assertEquals("false", dev.getProperty("dubbo.registry.check"));
         assertEquals("${DUBBO_CONFIG_CENTER_ADDRESS:N/A}", dev.getProperty("dubbo.config-center.address"));
+        assertEquals("${KNOWLEDGE_AGENT_TOKEN_ISSUER:knowledge-agent-platform}", dev.getProperty("knowledge-agent.auth.token-issuer"));
+        assertEquals("${KNOWLEDGE_AGENT_REVIEW_DEDUP_WINDOW:PT30M}", dev.getProperty("knowledge-agent.review.dedup-window"));
     }
 
     private Properties loadYaml(String path) {
