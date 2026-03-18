@@ -1,6 +1,7 @@
 package com.knowledge.agent.core.tool;
 
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.UserProfileDTO;
 import com.knowledge.agent.api.service.RagService;
 import com.knowledge.agent.api.service.UserService;
 import com.knowledge.agent.common.exception.BizException;
@@ -26,6 +27,12 @@ public class DubboAgentToolRouter implements AgentToolRouter {
     public String getUserProfile(Long userId) {
         Result<String> result = userService.getUserProfile(userId);
         return unwrap(result, "{}");
+    }
+
+    @Override
+    public UserProfileDTO getUserProfileDetail(Long userId) {
+        Result<UserProfileDTO> result = userService.getUserProfileDetail(userId);
+        return unwrap(result, null);
     }
 
     @Override

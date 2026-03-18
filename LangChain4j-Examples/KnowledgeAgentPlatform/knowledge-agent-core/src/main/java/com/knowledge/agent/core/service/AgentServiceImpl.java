@@ -2,14 +2,16 @@ package com.knowledge.agent.core.service;
 
 import cn.hutool.core.util.StrUtil;
 import com.knowledge.agent.api.dto.KnowledgeDTO;
+import com.knowledge.agent.api.dto.UserProfileDTO;
 import com.knowledge.agent.api.service.AgentService;
 import com.knowledge.agent.common.exception.BizException;
 import com.knowledge.agent.common.resp.Result;
+import com.knowledge.agent.core.llm.LangChain4jAgentRuntime;
 import com.knowledge.agent.core.model.ConversationState;
 import com.knowledge.agent.core.model.ConversationTurn;
 import com.knowledge.agent.core.model.StateContext;
 import com.knowledge.agent.core.prompt.AgentPromptService;
-import com.knowledge.agent.core.store.InMemoryConversationStore;
+import com.knowledge.agent.core.store.ConversationStore;
 import com.knowledge.agent.core.tool.AgentToolRouter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
@@ -18,6 +20,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
 
@@ -28,16 +31,19 @@ public class AgentServiceImpl implements AgentService {
 
     private static final int DEFAULT_RETRIEVE_LIMIT = 3;
 
-    private final InMemoryConversationStore conversationStore;
+    private final ConversationStore conversationStore;
     private final AgentPromptService promptService;
     private final AgentToolRouter toolRouter;
+    private final LangChain4jAgentRuntime langChain4jAgentRuntime;
 
-    public AgentServiceImpl(InMemoryConversationStore conversationStore,
+    public AgentServiceImpl(ConversationStore conversationStore,
                             AgentPromptService promptService,
-                            AgentToolRouter toolRouter) {
+                            AgentToolRouter toolRouter,
+                            LangChain4jAgentRuntime langChain4jAgentRuntime) {
         this.conversationStore = conversationStore;
         this.promptService = promptService;
         this.toolRouter = toolRouter;
+        this.langChain4jAgentRuntime = langChain4jAgentRuntime;
     }
 
     @Override
@@ -112,10 +118,19 @@ public class AgentServiceImpl implements AgentService {
     }
 
     private String buildTeachingResponse(StateContext context, String query) {
-        String profile = toolRouter.getUserProfile(context.getUserId());
+        UserProfileDTO profile = toolRouter.getUserProfileDetail(context.getUserId());
         List<KnowledgeDTO> knowledgeList = toolRouter.searchKnowledge(context.getUserId(), query, DEFAULT_RETRIEVE_LIMIT);
         context.setActiveTopic(query);
         String instruction = promptService.buildInstruction(ConversationState.TEACHING, profile);
+        Optional<String> llmResponse = langChain4jAgentRuntime.generateTeachingReply(instruction, profile, knowledgeList, query);
+        if (llmResponse.isPresent()) {
+            return """
+                    Current state: TEACHING
+                    State instruction: %s
+                    LLM response:
+                    %s
+                    """.formatted(instruction, llmResponse.get());
+        }
         return """
                 Current state: TEACHING
                 State instruction: %s
@@ -123,7 +138,7 @@ public class AgentServiceImpl implements AgentService {
                 Related knowledge:
                 %s
                 Next step: continue by narrowing '%s' into one or two smaller questions.
-                """.formatted(instruction, profile, formatKnowledgeList(knowledgeList), query.trim());
+                """.formatted(instruction, profile == null ? "{}" : profile.getPreferencesJson(), formatKnowledgeList(knowledgeList), query.trim());
     }
 
     private String buildReviewResponse(StateContext context) {
@@ -168,13 +183,13 @@ public class AgentServiceImpl implements AgentService {
                 .map(turn -> turn.getRole() + ": " + turn.getContent())
                 .reduce((left, right) -> left + "\n" + right)
                 .orElse(query);
-        return """
+        return langChain4jAgentRuntime.summarize(StrUtil.blankToDefault(context.getActiveTopic(), "unnamed topic"), recent).orElse("""
                 Topic: %s
                 Recent dialog:
                 %s
 
                 Current summary: %s
-                """.formatted(StrUtil.blankToDefault(context.getActiveTopic(), "unnamed topic"), recent, query.trim());
+                """.formatted(StrUtil.blankToDefault(context.getActiveTopic(), "unnamed topic"), recent, query.trim()));
     }
 
     private Set<String> buildTags(StateContext context, String query) {

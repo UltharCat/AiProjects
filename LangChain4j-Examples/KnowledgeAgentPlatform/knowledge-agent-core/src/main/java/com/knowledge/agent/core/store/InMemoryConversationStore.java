@@ -9,10 +9,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
-public class InMemoryConversationStore {
+public class InMemoryConversationStore implements ConversationStore {
 
     private final Map<Long, StateContext> store = new ConcurrentHashMap<>();
 
+    @Override
     public StateContext getOrCreate(Long userId) {
         return store.computeIfAbsent(userId, id -> StateContext.builder()
                 .userId(id)
@@ -21,6 +22,7 @@ public class InMemoryConversationStore {
                 .build());
     }
 
+    @Override
     public void save(StateContext context) {
         context.setUpdatedAt(LocalDateTime.now());
         store.put(context.getUserId(), context);
