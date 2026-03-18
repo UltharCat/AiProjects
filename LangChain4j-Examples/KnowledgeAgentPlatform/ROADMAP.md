@@ -2,10 +2,10 @@
 
 This roadmap is calibrated against the current code, configuration, and verification results rather than vision-only descriptions.
 
-> Scan date: 2026-03-17  
+> Scan date: 2026-03-18  
 > Project path: `F:\JavaProjects\AiProjects\LangChain4j-Examples\KnowledgeAgentPlatform`  
 > Build result: `mvn -DskipTests compile` passed  
-> Verification note: full `mvn test` still depends on local `Nacos` and external services, so targeted tests are used to validate newly implemented behavior
+> Verification note: `mvn test` passed on 2026-03-18 after adding Gateway auth/review/scheduler tests
 
 ## Status Legend
 
@@ -46,13 +46,14 @@ Build a learning-oriented Knowledge Agent platform around the main loop of `teac
 - [x] Base runtime config for `knowledge-agent-core`
 - [x] Milvus collection initialization with dense/sparse schema
 - [x] `docker-compose.yml` baseline for Nacos/Redis/MySQL/RocketMQ
-- [ ] Redis connection and cache integration
-- [ ] RocketMQ topics, producer, and consumer wiring
+- [-] Redis-backed cache integration with in-memory fallback
+- [x] RocketMQ topics, producer, and consumer baseline wiring
 
 Completion criteria:
 
 - Items marked `[x]` must be backed by files in the repository
-- Phase 0 is considered complete only when Redis and RocketMQ also have working baseline integrations
+- RocketMQ baseline events are now wired for knowledge archival and review-batch publication/consumption
+- Redis-backed deduplication, batch caching, and conversation persistence are available with explicit fallback behavior
 
 ## Phase 1: Shared Contracts and Common Utilities
 
@@ -66,13 +67,13 @@ Completion criteria:
 - [x] `AgentService`
 - [x] `RagService`
 - [x] `UserService`
-- [ ] Contract tests across service boundaries
-- [ ] Unified error/status code conventions
+- [x] Contract tests across service boundaries
+- [x] Unified error/status code conventions
 
 Completion criteria:
 
 - Shared types and interfaces are present in source form
-- Contract-level tests still need to be added before this phase is fully hardened
+- Shared DTOs, JWT helpers, error codes, and contract-level tests are all present in source form
 
 ## Phase 2: User Service
 
@@ -80,15 +81,17 @@ Completion criteria:
 - [x] `SysUser` entity and `SysUserMapper`
 - [x] `login`
 - [x] `getUserProfile`
-- [ ] JWT-based authentication
-- [ ] Login session model
-- [ ] Real `UserController` endpoints
-- [ ] Expanded user preference model
+- [x] JWT-based authentication
+- [x] Login session model
+- [x] Real Gateway-facing login session response with token metadata and pending reviews
+- [x] Expanded user preference model
 
 Completion criteria:
 
 - Dubbo provider capabilities exist
-- External auth and stable session handling are still missing
+- Token issuance is now based on signed JWTs
+- User HTTP login/profile endpoints and structured preference DTOs are now available
+- Token revocation and longer-lived session management remain future hardening work
 
 ## Phase 3: RAG Service
 
@@ -100,17 +103,18 @@ Completion criteria:
 - [x] `updateReviewStatus`
 - [x] Standard search API foundation: `searchKnowledge`
 - [x] Review query foundation: `listPendingReviews`
-- [-] Knowledge card metadata has been expanded with `userId/summary/tags`, but citation/source response structure is still missing
-- [ ] Document import pipeline
-- [ ] Tag filtering strategy
-- [ ] Citation/source return payload
-- [ ] Direct-answer strategy
-- [ ] Batch import tooling
+- [x] Knowledge card metadata expanded with `userId/summary/tags/source`
+- [x] Document import pipeline
+- [x] Tag filtering strategy
+- [x] Citation/source return payload
+- [x] Direct-answer strategy
+- [x] Batch import tooling
 
 Completion criteria:
 
 - The service now covers archival write, review status update, search, and pending-review query
-- RAG is not considered complete until import, citation/source output, and richer retrieval response contracts are finished
+- RAG now exposes import, tag-filtered search, and richer retrieval response metadata
+- Further hardening can focus on retrieval quality and larger-batch operational tooling instead of missing core contracts
 
 ## Phase 4: Agent Core MVP
 
@@ -120,15 +124,15 @@ Completion criteria:
 - [-] Tool routing foundation via `AgentToolRouter` and Dubbo orchestration
 - [x] `AgentService` provider implementation
 - [x] User/RAG Dubbo integration
-- [-] Session memory store implemented in-memory; durable persistence is still pending
-- [-] Rule-based state transitions are working, but real LangChain4j model execution is still pending
+- [-] Session memory store now prefers Redis with in-memory fallback, but cross-instance replay semantics still need broader validation
+- [-] Rule-based state transitions now have LangChain4j teaching/summary runtime integration with fallback behavior
 
 Completion criteria:
 
 - `chat` is implemented and reachable through Dubbo
 - Base states `IDLE/TEACHING/REVIEW/SUMMARY` are supported
 - User profile + RAG + response orchestration is closed-loop for the MVP path
-- This phase remains partial until real model/tool execution and durable memory are added
+- This phase remains partial until model/tool orchestration goes beyond the current teaching/summary entrypoints and Redis behavior is validated in fuller runtime scenarios
 
 ## Phase 5: Gateway / BFF
 
@@ -136,28 +140,29 @@ Completion criteria:
 - [x] HTTP controllers
 - [x] Minimal SSE endpoint
 - [x] Agent/User/RAG route aggregation
-- [-] Authentication is still pass-through login only, not unified request auth
-- [ ] External API documentation
+- [x] Unified bearer-token authentication for non-login endpoints
+- [x] External API documentation
 
 Completion criteria:
 
 - Gateway is no longer just a shell module
-- This phase remains partial until unified auth and API documentation are in place
+- The Gateway hardening milestone is complete for the current stage
 
 ## Phase 6: Review Scheduling Loop
 
 - [x] Due review card query
-- [ ] `ReviewTask` model
-- [ ] Login-triggered review reminder
-- [ ] Scheduled review list generation
-- [ ] Redis queue or dedup cache
+- [x] `ReviewTask` model
+- [x] Login-triggered review reminder
+- [x] Scheduled review list generation entrypoint
+- [-] Redis-backed dedup, batch cache, and scheduler loop with event publication
 - [x] Agent-driven review questioning within the conversation flow
 - [x] Review result write-back
 
 Completion criteria:
 
 - The conversational review loop exists for manually triggered review sessions
-- This phase remains incomplete until login/scheduler triggers and deduplication are implemented
+- Login-triggered review dispatch, scheduler registration, and dedup hooks now exist
+- This phase remains incomplete until review task persistence is backed by durable storage and multi-instance delivery semantics are strengthened
 
 ## Phase 7: Enhancements and Long-Term Direction
 
@@ -200,63 +205,61 @@ Completion criteria:
 
 ### Planned Only
 
-- `ReviewTask`
 - `ReminderEvent`
 - Citation/source/direct-answer response schema
-- Unified authentication contract for Gateway
 
 ## Next Implementation Order
 
-1. Complete Gateway auth and external API documentation
-2. Complete review triggers, scheduling, and deduplication
-3. Replace rule-based Agent orchestration with real LangChain4j model/tool execution
-4. Keep Phase 7 deferred
+1. Add durable review task persistence and clearer multi-instance delivery semantics
+2. Extend LangChain4j runtime integration from teaching/summary fallback to fuller tool-driven orchestration
+3. Keep Phase 7 deferred
 
 Rationale:
 
 - The MVP path is now available end-to-end, so the highest-value gaps are hardening and automation
-- Review triggering still lacks scheduler/login integration
-- Agent Core still needs true model execution, but Phase 7 should remain out of scope for now
+- Review triggering now has login integration, scheduler execution, Redis-first dedup/batch caching, and event publication hooks
+- Agent Core now has initial LangChain4j runtime integration, but fuller tool-driven orchestration is still ahead
 
 ## Next Stage Development Goals
 
-Current next-stage focus: finish the Gateway hardening work and lay the trigger foundation for the review loop.
+Current next-stage focus: finish review-task durability and strengthen the current LangChain4j-powered orchestration layer.
 
-### Goal A: Move Gateway from MVP entrypoint to stable external access layer
+### Goal A: Keep the Gateway hardening baseline stable
 
-- Add unified request authentication for all non-login endpoints
-- Define a clear token/header convention between login, chat, search, and review APIs
-- Add external API documentation for the currently exposed Gateway endpoints
-- Normalize request/response and error handling at the Gateway boundary
+- Maintain unified request authentication for all non-login endpoints
+- Keep the token/header convention stable across login, chat, search, and review APIs
+- Evolve external API documentation alongside endpoint changes
+- Continue normalizing request/response and error handling at the Gateway boundary
 
 ### Goal B: Turn review flow from manual invocation into triggerable capability
 
-- Add login-triggered pending review lookup
-- Define the initial `ReviewTask` model or equivalent response contract
-- Prepare the scheduler entrypoint for due-review generation
-- Reserve Redis-based deduplication hooks without implementing the full queue system yet
+- Add durable review task persistence for login/manual/scheduled batches
+- Decide whether review task persistence should live in Gateway, RAG, or a dedicated scheduler module
+- Evolve Redis usage from dedup/cache into clearer delivery semantics
+- Keep login-triggered pending review lookup aligned with scheduled dispatch behavior
 
 ### Goal C: Keep Agent Core stable while deferring full model execution
 
 - Preserve the current Dubbo orchestration path as the fallback implementation
 - Avoid expanding Phase 7 scope into graph, multimodal, or workflow features
-- Keep LangChain4j runtime integration as the stage after Gateway/review hardening
+- Keep LangChain4j runtime integration moving from point features to fuller tool-driven execution without dragging in Phase 7 scope
 
 ### Exit Criteria for the Next Stage
 
 - Gateway endpoints except login are guarded by a unified auth mechanism
 - The project exposes a documented external API surface for login/chat/search/review
 - A user can trigger pending review retrieval immediately after login
-- Review trigger and scheduling contracts are defined clearly enough for the following stage
-- `mvn -DskipTests compile` still passes, and targeted unit tests remain green
+- Review trigger and scheduling contracts are persisted durably enough for the following stage
+- `mvn test` stays green after each hardening change
 
 ## Current Evidence Pointers
 
 - User side: `SysUser`, `SysUserMapper`, `SysUserServiceImpl`, user Flyway script
-- RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`
-- Agent Core side: `ConversationState`, `StateContext`, `AgentServiceImpl`, `AgentPromptService`, `DubboAgentToolRouter`
-- Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`
-- Verification: targeted tests `AgentServiceImplTest` and `GatewayAgentControllerTest`
+- RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`, `V3__add_knowledge_source.sql`
+- Agent Core side: `ConversationState`, `StateContext`, `AgentServiceImpl`, `AgentPromptService`, `DubboAgentToolRouter`, `LangChain4jAgentRuntime`, `RedisConversationStore`
+- Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`, `GatewayReviewController`, auth interceptor/config, review dispatcher, scheduler, Redis-backed dedup/batch store, review-batch event publisher
+- Documentation: `docs/gateway-api.zh-CN.md`
+- Verification: `mvn test`, plus Gateway auth/login/review unit tests
 
 ## Maintenance Rules
 
