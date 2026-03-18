@@ -7,6 +7,17 @@ This roadmap is calibrated against the current code, configuration, and verifica
 > Build result: `mvn -DskipTests compile` passed  
 > Verification note: `mvn test` passed on 2026-03-18 after adding Gateway auth/review/scheduler tests
 
+## Current Verdict
+
+- `Phase 0-5`: complete by current code and verification evidence
+- `Phase 6`: functionally closed-loop but still partial
+- `Phase 7`: deferred by design
+
+Reasoning:
+
+- Review dispatch, deduplication, durable batch persistence, latest-batch recall, and review-status write-back are now all implemented.
+- The remaining gap is not “missing review loop capability”; it is that Redis-backed deduplication and batch caching are still only partially completed and not yet fully hardened as a stable runtime layer.
+
 ## Status Legend
 
 - `[x] Done`: implementation exists in code/config/scripts and can be located in the repository
@@ -53,7 +64,7 @@ Completion criteria:
 
 - Items marked `[x]` must be backed by files in the repository
 - RocketMQ baseline events are now wired for knowledge archival and review-batch publication/consumption
-- Redis-backed deduplication, batch caching, and conversation persistence are available with explicit fallback behavior
+- Redis-backed deduplication, batch caching, and conversation persistence are available with explicit fallback behavior, but broader runtime validation is still incomplete
 
 ## Phase 1: Shared Contracts and Common Utilities
 
@@ -163,7 +174,7 @@ Completion criteria:
 - The conversational review loop exists for manually triggered review sessions
 - Login-triggered review dispatch, scheduler registration, and dedup hooks now exist
 - Review task batches are now persisted durably and can be read back by the latest scheduled-batch query
-- This phase remains incomplete until multi-instance delivery semantics are strengthened beyond the current Redis + database baseline
+- This phase remains incomplete because Redis-backed deduplication and batch caching are still marked partial in the roadmap itself and are not yet fully validated as a stable runtime layer
 
 ## Phase 7: Enhancements and Long-Term Direction
 
@@ -211,9 +222,10 @@ Completion criteria:
 
 ## Next Implementation Order
 
-1. Strengthen multi-instance delivery semantics on top of the current durable review-task persistence
-2. Extend LangChain4j runtime integration from teaching/summary fallback to fuller tool-driven orchestration
-3. Keep Phase 7 deferred
+1. Harden Redis-backed review deduplication, batch caching, and cache-to-persistence boundaries
+2. Add clearer recovery and observability behavior around review batch generation and status write-back
+3. Extend LangChain4j runtime integration from teaching/summary fallback to fuller tool-driven orchestration
+4. Keep Phase 7 deferred
 
 Rationale:
 
@@ -223,7 +235,7 @@ Rationale:
 
 ## Next Stage Development Goals
 
-Current next-stage focus: strengthen the now-persisted review-task delivery semantics and improve the current LangChain4j-powered orchestration layer.
+Current next-stage focus: finish the unfinished Redis-backed review runtime baseline and improve the current LangChain4j-powered orchestration layer.
 
 ### Goal A: Keep the Gateway hardening baseline stable
 
@@ -232,10 +244,11 @@ Current next-stage focus: strengthen the now-persisted review-task delivery sema
 - Evolve external API documentation alongside endpoint changes
 - Continue normalizing request/response and error handling at the Gateway boundary
 
-### Goal B: Turn review flow from manual invocation into triggerable capability
+### Goal B: Keep the review flow stable after closing the basic trigger loop
 
 - Keep durable review task persistence stable for login/manual/scheduled batches
-- Evolve Redis usage from dedup/cache into clearer delivery semantics across multiple instances
+- Clarify runtime boundaries between Redis dedup/cache and durable batch persistence
+- Validate the fallback path when Redis is unavailable and the system falls back to in-memory behavior
 - Keep login-triggered pending review lookup aligned with scheduled dispatch behavior
 
 ### Goal C: Keep Agent Core stable while deferring full model execution
@@ -252,6 +265,42 @@ Current next-stage focus: strengthen the now-persisted review-task delivery sema
 - Review trigger and scheduling contracts are persisted durably enough for the following stage
 - Latest scheduled review batches can be recalled from durable storage without relying solely on cache
 - `mvn test` stays green after each hardening change
+
+## API Verification Cases
+
+### Login
+
+1. Call `POST /api/auth/login`
+Expected result: returns `accessToken`, `pendingReviewCount`, and `pendingReviewTasks`.
+
+### Pending Review Batch
+
+1. Call `GET /api/reviews/pending?limit=5` with `Authorization: Bearer <accessToken>`
+Expected result: returns a `batchId`, `triggerSource=MANUAL`, and a task list.
+
+### Latest Scheduled Batch
+
+1. Call `GET /api/reviews/scheduled/latest` with `Authorization: Bearer <accessToken>`
+Expected result: returns the latest `SCHEDULED` batch when present, or an empty batch structure when absent.
+
+2. Disable or bypass Redis, then call the same endpoint after a batch is generated
+Expected result: the endpoint can still fall back to durable storage or the current runtime fallback path without crashing.
+
+### Review Status Write-back
+
+1. Call `PATCH /api/reviews/status` with a valid `knowledgeId` and `quality`
+Expected result: review parameters are updated and the corresponding review task is marked as completed.
+
+### RAG Search
+
+1. Call `GET /api/rag/search?query=sm2&limit=3&tags=memory` with `Authorization: Bearer <accessToken>`
+Expected result: each result can include `source`, `citation`, `directAnswer`, and `matchedSegment`, and tag filtering works.
+
+### Agent Chat
+
+1. Call `POST /api/agent/chat`
+2. Call `GET /api/agent/chat/stream?prompt=review`
+Expected result: standard chat returns the unified response model and the SSE endpoint emits at least one `message` event.
 
 ## Current Evidence Pointers
 
