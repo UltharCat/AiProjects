@@ -12,12 +12,22 @@ public class BizException extends RuntimeException {
 
     public BizException(String message) {
         super(message);
-        this.code = 500;
+        this.code = ErrorCode.INTERNAL_ERROR.code();
     }
 
     public BizException(Integer code, String message) {
         super(message);
         this.code = code;
+    }
+
+    public BizException(ErrorCode errorCode) {
+        super(errorCode.defaultMessage());
+        this.code = errorCode.code();
+    }
+
+    public BizException(ErrorCode errorCode, String message) {
+        super(message);
+        this.code = errorCode.code();
     }
 
 }

@@ -3,6 +3,8 @@ package com.knowledge.agent.api.service;
 import com.knowledge.agent.api.request.UserLoginRequest;
 import com.knowledge.agent.common.resp.Result;
 
+import java.util.List;
+
 public interface UserService {
 
     /**
@@ -18,4 +20,10 @@ public interface UserService {
      * @return
      */
     Result<String> getUserProfile(Long userId);
+
+    /**
+     * Return all active user ids for review scheduling.
+     * @return active user ids
+     */
+    Result<List<Long>> listActiveUserIds();
 }
