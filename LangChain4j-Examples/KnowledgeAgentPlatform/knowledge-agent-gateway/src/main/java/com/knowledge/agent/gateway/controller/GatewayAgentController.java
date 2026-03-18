@@ -1,8 +1,9 @@
 package com.knowledge.agent.gateway.controller;
 
-import com.knowledge.agent.api.request.ChatRequest;
 import com.knowledge.agent.api.service.AgentService;
 import com.knowledge.agent.common.resp.Result;
+import com.knowledge.agent.gateway.auth.GatewayUserContext;
+import com.knowledge.agent.gateway.model.GatewayChatRequest;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -22,21 +23,21 @@ public class GatewayAgentController {
     private AgentService agentService;
 
     @PostMapping("/chat")
-    public Result<String> chat(@RequestBody ChatRequest request) {
-        return agentService.chat(request.userId(), request.prompt());
+    public Result<String> chat(@RequestBody GatewayChatRequest request) {
+        return agentService.chat(GatewayUserContext.requireUserId(), request.prompt());
     }
 
     @GetMapping("/chat/stream")
-    public SseEmitter stream(@RequestParam Long userId, @RequestParam String prompt) throws IOException {
+    public SseEmitter stream(@RequestParam String prompt) throws IOException {
         SseEmitter emitter = new SseEmitter(0L);
-        Result<String> result = agentService.chat(userId, prompt);
+        Result<String> result = agentService.chat(GatewayUserContext.requireUserId(), prompt);
         emitter.send(SseEmitter.event().name("message").data(result));
         emitter.complete();
         return emitter;
     }
 
     @PostMapping("/state")
-    public Result<Void> switchState(@RequestParam Long userId, @RequestParam String targetState) {
-        return agentService.switchState(userId, targetState);
+    public Result<Void> switchState(@RequestParam String targetState) {
+        return agentService.switchState(GatewayUserContext.requireUserId(), targetState);
     }
 }

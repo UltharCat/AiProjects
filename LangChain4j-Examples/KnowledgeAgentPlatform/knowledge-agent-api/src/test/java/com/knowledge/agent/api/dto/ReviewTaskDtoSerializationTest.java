@@ -20,7 +20,7 @@ class ReviewTaskDtoSerializationTest {
                 .summary("SM-2 overview")
                 .dueAt(LocalDateTime.of(2026, 3, 18, 10, 0))
                 .triggerSource(ReviewTriggerSource.LOGIN)
-                .status("PENDING")
+                .status(ReviewTaskStatus.PENDING)
                 .dedupKey("LOGIN:1:9")
                 .build();
 

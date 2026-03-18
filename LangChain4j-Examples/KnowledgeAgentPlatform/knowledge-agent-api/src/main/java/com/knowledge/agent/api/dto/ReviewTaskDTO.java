@@ -29,7 +29,7 @@ public class ReviewTaskDTO implements Serializable {
 
     private ReviewTriggerSource triggerSource;
 
-    private String status;
+    private ReviewTaskStatus status;
 
     private String dedupKey;
 }
