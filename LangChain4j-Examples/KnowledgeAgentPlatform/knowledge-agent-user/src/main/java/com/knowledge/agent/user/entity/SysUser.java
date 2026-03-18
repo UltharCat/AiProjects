@@ -36,6 +36,11 @@ public class SysUser {
     private String learningStyle;
 
     /**
+     * Structured user preferences encoded as JSON for future evolution.
+     */
+    private String preferencesJson;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;

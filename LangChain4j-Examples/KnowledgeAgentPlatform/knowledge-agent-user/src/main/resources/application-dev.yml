@@ -33,3 +33,8 @@ dubbo:
     use-as-metadata-center: false
   config-center:
     address: ${DUBBO_CONFIG_CENTER_ADDRESS:N/A}
+knowledge-agent:
+  auth:
+    token-issuer: ${KNOWLEDGE_AGENT_TOKEN_ISSUER:knowledge-agent-platform}
+    token-secret: ${KNOWLEDGE_AGENT_TOKEN_SECRET:knowledge-agent-dev-secret}
+    token-ttl: ${KNOWLEDGE_AGENT_TOKEN_TTL:PT12H}
