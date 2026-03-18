@@ -8,6 +8,7 @@ import com.knowledge.agent.common.resp.Result;
 import com.knowledge.agent.gateway.auth.GatewayUserContext;
 import com.knowledge.agent.gateway.model.ReviewStatusUpdateRequest;
 import com.knowledge.agent.gateway.model.ReviewTaskBatchResponse;
+import com.knowledge.agent.gateway.review.ReviewTaskBatchStore;
 import com.knowledge.agent.gateway.review.ReviewTaskDispatcher;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,8 +30,12 @@ public class GatewayReviewController {
 
     private final ReviewTaskDispatcher reviewTaskDispatcher;
 
-    public GatewayReviewController(ReviewTaskDispatcher reviewTaskDispatcher) {
+    private final ReviewTaskBatchStore reviewTaskBatchStore;
+
+    public GatewayReviewController(ReviewTaskDispatcher reviewTaskDispatcher,
+                                   ReviewTaskBatchStore reviewTaskBatchStore) {
         this.reviewTaskDispatcher = reviewTaskDispatcher;
+        this.reviewTaskBatchStore = reviewTaskBatchStore;
     }
 
     @GetMapping("/pending")
@@ -40,6 +45,20 @@ public class GatewayReviewController {
                 limit,
                 ReviewTriggerSource.MANUAL
         ));
+    }
+
+    @GetMapping("/scheduled/latest")
+    public Result<ReviewTaskBatchResponse> latestScheduledBatch() {
+        return Result.success(reviewTaskBatchStore.findLatest(
+                GatewayUserContext.requireUserId(),
+                ReviewTriggerSource.SCHEDULED
+        ).orElse(ReviewTaskBatchResponse.builder()
+                .userId(GatewayUserContext.requireUserId())
+                .triggerSource(ReviewTriggerSource.SCHEDULED)
+                .requestedLimit(0)
+                .dispatchedCount(0)
+                .tasks(List.of())
+                .build()));
     }
 
     @PatchMapping("/status")

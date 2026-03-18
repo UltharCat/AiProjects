@@ -1,8 +1,6 @@
 package com.knowledge.agent.gateway.review;
 
 import com.knowledge.agent.api.dto.ReviewTriggerSource;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -13,13 +11,15 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * In-memory deduplication used as a local stand-in for a future Redis-backed implementation.
  */
-@Component
 public class InMemoryReviewTaskDeduplicator implements ReviewTaskDeduplicator {
 
-    @Value("${knowledge-agent.review.dedup-window:PT30M}")
-    private Duration dedupWindow;
+    private final Duration dedupWindow;
 
     private final Map<String, Instant> dedupStore = new ConcurrentHashMap<>();
+
+    public InMemoryReviewTaskDeduplicator(Duration dedupWindow) {
+        this.dedupWindow = dedupWindow;
+    }
 
     @Override
     public boolean tryAcquire(ReviewTriggerSource triggerSource, Long userId, Long knowledgeId) {

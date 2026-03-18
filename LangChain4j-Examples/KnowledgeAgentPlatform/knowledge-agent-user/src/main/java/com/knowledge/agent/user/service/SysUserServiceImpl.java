@@ -16,6 +16,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -72,6 +73,17 @@ public class SysUserServiceImpl implements UserService {
         SysUser user = sysUserMapper.selectOne(new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getId, userId));
         return Result.success(user != null && StrUtil.isNotBlank(user.getLearningStyle()) ? user.getLearningStyle() : "{}");
+    }
+
+    @Override
+    public Result<List<Long>> listActiveUserIds() {
+        List<Long> userIds = sysUserMapper.selectList(new LambdaQueryWrapper<SysUser>()
+                        .select(SysUser::getId)
+                        .eq(SysUser::getDeleted, 0))
+                .stream()
+                .map(SysUser::getId)
+                .toList();
+        return Result.success(userIds);
     }
 
 }

@@ -3,6 +3,12 @@ server:
 spring:
   application:
     name: knowledge-agent-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:redis}
+      timeout: ${REDIS_TIMEOUT:5s}
 dubbo:
   application:
     name: knowledge-agent-gateway
@@ -24,3 +30,10 @@ knowledge-agent:
     token-ttl: ${KNOWLEDGE_AGENT_TOKEN_TTL:PT12H}
   review:
     dedup-window: ${KNOWLEDGE_AGENT_REVIEW_DEDUP_WINDOW:PT30M}
+    batch-ttl: ${KNOWLEDGE_AGENT_REVIEW_BATCH_TTL:PT24H}
+    redis-key-prefix: ${KNOWLEDGE_AGENT_REVIEW_REDIS_KEY_PREFIX:knowledge-agent:review}
+    scheduler:
+      enabled: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_ENABLED:true}
+      batch-limit: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_BATCH_LIMIT:5}
+      initial-delay-ms: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_INITIAL_DELAY_MS:30000}
+      fixed-delay-ms: ${KNOWLEDGE_AGENT_REVIEW_SCHEDULER_FIXED_DELAY_MS:900000}

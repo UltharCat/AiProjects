@@ -169,7 +169,17 @@
 - 手动查询不做去重，便于客户端主动拉取
 - 调度触发和登录触发复用同一批次契约 `ReviewTaskBatchResponse`
 
-### 4.2 回写复习结果
+### 4.2 查询最近一次调度生成结果
+
+- Method: `GET`
+- Path: `/api/reviews/scheduled/latest`
+
+说明：
+
+- 返回当前用户最近一次 `SCHEDULED` 来源的 review 批次
+- 当 Redis 可用时结果优先从 Redis 读取
+- 当 Redis 不可用时自动回退到当前节点内存缓存
+### 4.3 回写复习结果
 
 - Method: `PATCH`
 - Path: `/api/reviews/status`
@@ -203,6 +213,5 @@
 
 当前阶段尚未实现：
 
-- 定时任务实际注册
-- Redis 队列/去重缓存落地
 - Review 任务持久化表
+- 多实例下更完整的投递确认/消费机制

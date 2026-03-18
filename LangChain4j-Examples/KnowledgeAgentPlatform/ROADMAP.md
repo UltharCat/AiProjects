@@ -5,7 +5,7 @@ This roadmap is calibrated against the current code, configuration, and verifica
 > Scan date: 2026-03-18  
 > Project path: `F:\JavaProjects\AiProjects\LangChain4j-Examples\KnowledgeAgentPlatform`  
 > Build result: `mvn -DskipTests compile` passed  
-> Verification note: `mvn test` passed on 2026-03-18 after adding Gateway auth/review tests
+> Verification note: `mvn test` passed on 2026-03-18 after adding Gateway auth/review/scheduler tests
 
 ## Status Legend
 
@@ -150,16 +150,16 @@ Completion criteria:
 - [x] Due review card query
 - [x] `ReviewTask` model
 - [x] Login-triggered review reminder
-- [-] Scheduled review list generation entrypoint
-- [-] In-memory dedup hook (Redis-backed queue/cache still pending)
+- [x] Scheduled review list generation entrypoint
+- [-] Redis-backed dedup hook with in-memory fallback
 - [x] Agent-driven review questioning within the conversation flow
 - [x] Review result write-back
 
 Completion criteria:
 
 - The conversational review loop exists for manually triggered review sessions
-- Login-triggered review dispatch and dedup hooks now exist
-- This phase remains incomplete until real scheduler registration and Redis-backed delivery are implemented
+- Login-triggered review dispatch, scheduler registration, and dedup hooks now exist
+- This phase remains incomplete until durable review task persistence and fuller Redis-backed delivery semantics are implemented
 
 ## Phase 7: Enhancements and Long-Term Direction
 
@@ -207,19 +207,19 @@ Completion criteria:
 
 ## Next Implementation Order
 
-1. Complete scheduled review generation and Redis-backed deduplication
+1. Harden scheduled review persistence and delivery semantics
 2. Replace rule-based Agent orchestration with real LangChain4j model/tool execution
 3. Keep Phase 7 deferred
 
 Rationale:
 
 - The MVP path is now available end-to-end, so the highest-value gaps are hardening and automation
-- Review triggering now has login integration and a scheduler-facing batch contract, but not a real scheduler job yet
+- Review triggering now has login integration, a real scheduler job, and Redis-first dedup/batch caching
 - Agent Core still needs true model execution, but Phase 7 should remain out of scope for now
 
 ## Next Stage Development Goals
 
-Current next-stage focus: finish scheduler-backed review dispatch and keep preparing the Agent Core runtime upgrade.
+Current next-stage focus: harden review delivery persistence and keep preparing the Agent Core runtime upgrade.
 
 ### Goal A: Keep the Gateway hardening baseline stable
 
@@ -230,9 +230,9 @@ Current next-stage focus: finish scheduler-backed review dispatch and keep prepa
 
 ### Goal B: Turn review flow from manual invocation into triggerable capability
 
-- Convert the scheduler-facing review batch contract into a real scheduled job
-- Replace the in-memory dedup hook with Redis-backed delivery guarantees
+- Add durable review task persistence for scheduled batches
 - Decide whether review task persistence should live in Gateway, RAG, or a dedicated scheduler module
+- Evolve Redis usage from dedup/cache into clearer delivery semantics
 - Keep login-triggered pending review lookup aligned with scheduled dispatch behavior
 
 ### Goal C: Keep Agent Core stable while deferring full model execution
@@ -254,7 +254,7 @@ Current next-stage focus: finish scheduler-backed review dispatch and keep prepa
 - User side: `SysUser`, `SysUserMapper`, `SysUserServiceImpl`, user Flyway script
 - RAG side: `KnowledgeCard`, `KnowledgeCardMapper`, `RagServiceImpl`, `MilvusConfig`, `V2__enhance_knowledge_card.sql`
 - Agent Core side: `ConversationState`, `StateContext`, `AgentServiceImpl`, `AgentPromptService`, `DubboAgentToolRouter`
-- Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`, `GatewayReviewController`, auth interceptor/config, review dispatcher
+- Gateway side: `GatewayAuthController`, `GatewayAgentController`, `GatewayRagController`, `GatewayReviewController`, auth interceptor/config, review dispatcher, scheduler, Redis-backed dedup/batch store
 - Documentation: `docs/gateway-api.zh-CN.md`
 - Verification: `mvn test`, plus Gateway auth/login/review unit tests
 

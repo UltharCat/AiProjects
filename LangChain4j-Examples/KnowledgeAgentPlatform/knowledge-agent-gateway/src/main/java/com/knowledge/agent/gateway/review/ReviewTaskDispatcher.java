@@ -27,8 +27,12 @@ public class ReviewTaskDispatcher {
 
     private final ReviewTaskDeduplicator reviewTaskDeduplicator;
 
-    public ReviewTaskDispatcher(ReviewTaskDeduplicator reviewTaskDeduplicator) {
+    private final ReviewTaskBatchStore reviewTaskBatchStore;
+
+    public ReviewTaskDispatcher(ReviewTaskDeduplicator reviewTaskDeduplicator,
+                                ReviewTaskBatchStore reviewTaskBatchStore) {
         this.reviewTaskDeduplicator = reviewTaskDeduplicator;
+        this.reviewTaskBatchStore = reviewTaskBatchStore;
     }
 
     public ReviewTaskBatchResponse dispatch(Long userId, Integer limit, ReviewTriggerSource triggerSource) {
@@ -47,13 +51,18 @@ public class ReviewTaskDispatcher {
                 .map(dto -> toTask(dto, userId, triggerSource))
                 .collect(Collectors.toList());
 
-        return ReviewTaskBatchResponse.builder()
+        ReviewTaskBatchResponse batch = ReviewTaskBatchResponse.builder()
                 .userId(userId)
                 .triggerSource(triggerSource)
                 .requestedLimit(requestedLimit)
                 .dispatchedCount(tasks.size())
                 .tasks(tasks)
                 .build();
+        if (triggerSource != ReviewTriggerSource.MANUAL) {
+            // 关键步骤：把登录/调度触发的批次缓存下来，后续可以按来源回查最近一次结果。
+            reviewTaskBatchStore.saveBatch(batch);
+        }
+        return batch;
     }
 
     private ReviewTaskDTO toTask(KnowledgeDTO dto, Long userId, ReviewTriggerSource triggerSource) {
